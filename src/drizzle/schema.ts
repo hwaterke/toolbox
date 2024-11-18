@@ -28,8 +28,13 @@ export const indexedFileTable = sqliteTable('file', {
   updatedAt: integer('updated_at', {mode: 'timestamp'})
     .default(sql`(datetime('now'))`)
     .notNull(),
+})
 
-  // Exif metadata
+export const exifTable = sqliteTable('exif', {
+  fileId: text('file_id', {length: 24})
+    .notNull()
+    .primaryKey()
+    .references(() => indexedFileTable.id, {onDelete: 'cascade'}),
   make: text('make'),
   model: text('model'),
   width: integer('width'),
@@ -39,7 +44,9 @@ export const indexedFileTable = sqliteTable('file', {
   livePhotoTarget: text('live_photo_target'),
   latitude: real('latitude'),
   longitude: real('longitude'),
-  exifValidatedAt: integer('exif_validated_at', {mode: 'timestamp'}),
+  createdAt: integer('created_at', {mode: 'timestamp'})
+    .default(sql`(datetime('now'))`)
+    .notNull(),
 })
 
 export const hashTable = sqliteTable(
@@ -66,8 +73,19 @@ export const hashTable = sqliteTable(
   }
 )
 
-export const fileRelations = relations(indexedFileTable, ({many}) => ({
+export const fileRelations = relations(indexedFileTable, ({one, many}) => ({
+  exif: one(exifTable, {
+    fields: [indexedFileTable.id],
+    references: [exifTable.fileId],
+  }),
   hashes: many(hashTable),
+}))
+
+export const exifRelations = relations(exifTable, ({one}) => ({
+  file: one(indexedFileTable, {
+    fields: [exifTable.fileId],
+    references: [indexedFileTable.id],
+  }),
 }))
 
 export const hashRelations = relations(hashTable, ({one}) => ({
@@ -79,6 +97,9 @@ export const hashRelations = relations(hashTable, ({one}) => ({
 
 export type IndexedFile = typeof indexedFileTable.$inferSelect
 export type InsertIndexedFile = typeof indexedFileTable.$inferInsert
+
+export type Exif = typeof exifTable.$inferSelect
+export type InsertExif = typeof exifTable.$inferInsert
 
 export type Hash = typeof hashTable.$inferSelect
 export type InsertHash = typeof hashTable.$inferInsert
