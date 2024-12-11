@@ -4,30 +4,16 @@ import {constants} from 'node:fs'
 import {DatabaseService} from './DatabaseService.js'
 import * as nodePath from 'node:path'
 import {HashingAlgorithmType, HashingService} from './HashingService.js'
-import {DuplicateFinderService} from './DuplicateFinderService.js'
 import {IndexedFile, IndexedFileWithHashes} from '../drizzle/schema.js'
-import {walkDirOrFile} from '../walkDirOrFile.js'
+import {IgnoreManager, walkDirOrFile} from '../walkDirOrFile.js'
 import {formatBytes, formatNumber} from '../utils/Formatter.js'
-import {isNullish} from 'remeda'
 import {LoggerService} from './LoggerService.js'
-
-type CrawlingOptions = {
-  limit?: number
-  minutes?: number
-  hashingAlgorithms: HashingAlgorithmType[]
-  includeExif: boolean
-  ignoreFileName?: string
-}
 
 type VerifyOptions = {
   limit?: number
   minutes?: number
   hashingAlgorithms: HashingAlgorithmType[]
   purge: boolean
-}
-
-type InfoOptions = {
-  duplicates: boolean
 }
 
 type LookupOptions = {
@@ -39,7 +25,6 @@ type LookupOptions = {
 export class IndexerService {
   private readonly databaseService
   private readonly hashingService = new HashingService()
-  private readonly duplicateFinder = new DuplicateFinderService()
   private readonly logger = LoggerService.getLogger()
 
   private metrics = {
@@ -55,7 +40,7 @@ export class IndexerService {
     this.databaseService = new DatabaseService(databasePath)
   }
 
-  async info(options: InfoOptions): Promise<void> {
+  async info(): Promise<void> {
     const fileCount = await this.databaseService.countFiles()
     this.logger.info(`${formatNumber(fileCount)} files indexed`)
     const hashCount = await this.databaseService.countHashes()
@@ -72,21 +57,6 @@ export class IndexerService {
           (100 * algoHashCount) / fileCount
         )}%`
       )
-    }
-
-    if (options.duplicates) {
-      // TODO Rework the duplicate finder.
-      const candidates = await this.databaseService.duplicates()
-      this.logger.debug(`${candidates.length} duplicate candidates`)
-      // const duplicates = this.duplicateFinder.getDuplicateGroups(candidates)
-      //
-      // // Write duplicates to file
-      // const data = JSON.stringify(
-      //   duplicates.map((group) => group.map((f) => f.path))
-      // )
-      // await writeFile('./duplicates.json', data, 'utf8')
-      //
-      // duplicates.map((group) => this.duplicateFinder.debugGroup(group))
     }
   }
 
@@ -155,20 +125,19 @@ export class IndexerService {
 
         if (!removed) {
           // Find similar exif date
-          const metadata = await this.getFileMetadata({
-            filePath,
-            includeExif: options.includeExif,
-          })
-          if (metadata.exifDate) {
-            const similarExifDate =
-              await this.databaseService.findFilesByExifDate(metadata.exifDate)
-            if (similarExifDate.length > 0) {
-              this.logger.info(`Files with similar exif date`)
-              for (const file of similarExifDate) {
-                this.logger.debug(`  ${file.path}`)
-              }
-            }
-          }
+          // const metadata = await this.getFileMetadata({
+          //   filePath,
+          // })
+          // if (metadata.exifDate) {
+          //   const similarExifDate =
+          //     await this.databaseService.findFilesByExifDate(metadata.exifDate)
+          //   if (similarExifDate.length > 0) {
+          //     this.logger.info(`Files with similar exif date`)
+          //     for (const file of similarExifDate) {
+          //       this.logger.debug(`  ${file.path}`)
+          //     }
+          //   }
+          // }
 
           // Find similar prefix
           const prefixMatch = nodePath
@@ -190,84 +159,6 @@ export class IndexerService {
         return {stop: false}
       },
     })
-  }
-
-  async crawl(path: string, options: CrawlingOptions): Promise<void> {
-    path = expandPath(path)
-    this.logger.debug(`Indexing ${path}`)
-
-    await walkDirOrFile({
-      path,
-      options: {
-        ignoreFileName: options.ignoreFileName ?? null,
-      },
-      callback: async (filePath) => {
-        try {
-          // Is it already indexed?
-          const existingEntry = await this.databaseService.findFile(filePath)
-
-          this.metrics.filesCrawled++
-
-          if (existingEntry) {
-            await this.hashFile({
-              indexedFile: existingEntry,
-              hashingAlgorithms: options.hashingAlgorithms,
-            })
-            if (
-              options.includeExif &&
-              isNullish(existingEntry.exifValidatedAt)
-            ) {
-              await this.databaseService.updateFileExifMetadata({
-                indexedFileId: existingEntry.id,
-                exifMetadata: await extractExif(existingEntry.path),
-              })
-              this.metrics.exifExtracted++
-            }
-          } else {
-            this.logger.debug(`Indexing ${filePath}`)
-
-            const metadata = await this.getFileMetadata({
-              filePath,
-              includeExif: options.includeExif,
-            })
-
-            const [fileEntity] = await this.databaseService.createFile(metadata)
-            this.metrics.newFilesIndexed++
-
-            await this.hashFile({
-              hashingAlgorithms: options.hashingAlgorithms,
-              indexedFile: {
-                id: fileEntity.id,
-                path: fileEntity.path,
-                hashes: [],
-              },
-            })
-          }
-
-          const shouldStopForLimit =
-            options.limit !== undefined &&
-            Math.max(this.metrics.newFilesIndexed, this.metrics.filesHashed) >=
-              options.limit
-
-          const shouldStopForTime =
-            options.minutes !== undefined &&
-            this.elapsedMinutes() > options.minutes
-
-          return {
-            stop: shouldStopForLimit || shouldStopForTime,
-          }
-        } catch (error) {
-          this.logger.error(`Error processing ${filePath}`)
-          this.logger.error(`${error}`)
-          // Skip this file and continue
-          return {stop: false}
-        }
-      },
-    })
-
-    this.logger.info(
-      `${this.metrics.filesCrawled} files crawled. ${this.metrics.newFilesIndexed} newly indexed. ${this.metrics.filesHashed} files hashed. ${this.metrics.exifExtracted} exif extracted.`
-    )
   }
 
   async verify(path: string, options: VerifyOptions): Promise<void> {
@@ -327,7 +218,6 @@ export class IndexerService {
     // File still exists, validate the stats
     const metadata = await this.getFileMetadata({
       filePath: file.path,
-      includeExif: false,
     })
 
     if (metadata.size === file.size) {
@@ -384,44 +274,44 @@ export class IndexerService {
    */
   private async hashFile({
     indexedFile,
-    hashingAlgorithms,
+    hashingAlgorithm,
   }: {
-    hashingAlgorithms: HashingAlgorithmType[]
+    hashingAlgorithm: HashingAlgorithmType
     indexedFile: {
       id: string
       path: string
-      hashes: {algorithm: HashingAlgorithmType}[]
     }
   }): Promise<void> {
+    this.logger.debug(
+      `Computing ${hashingAlgorithm} hash for ${indexedFile.path}`
+    )
     let hashesComputed = false
 
-    if (hashingAlgorithms.length > 0) {
-      for await (const hashingAlgorithm of hashingAlgorithms) {
-        if (
-          !indexedFile.hashes.some((he) => he.algorithm === hashingAlgorithm)
-        ) {
-          const result = await this.hashingService.hash(
-            indexedFile.path,
-            hashingAlgorithm
-          )
+    const result = await this.hashingService.hash(
+      indexedFile.path,
+      hashingAlgorithm
+    )
 
-          // Hashing algorithm is not applicable to the file
-          if (result === null) {
-            continue
-          }
-
-          this.metrics.hashesComputed++
-          hashesComputed = true
-
-          await this.databaseService.createHash({
-            indexedFileId: indexedFile.id,
-            algorithm: hashingAlgorithm,
-            version: result.version,
-            hash: result.hash,
-          })
-        }
-      }
+    // Hashing algorithm is not applicable to the file
+    if (result === null) {
+      this.logger.debug(
+        `${hashingAlgorithm} not applicable for ${indexedFile.path}`
+      )
+      return
     }
+
+    this.metrics.hashesComputed++
+    hashesComputed = true
+
+    this.logger.debug(
+      `Storing ${hashingAlgorithm} hash for ${indexedFile.path}`
+    )
+    await this.databaseService.createHash({
+      indexedFileId: indexedFile.id,
+      algorithm: hashingAlgorithm,
+      version: result.version,
+      hash: result.hash,
+    })
 
     if (hashesComputed) {
       this.metrics.filesHashed++
@@ -435,7 +325,6 @@ export class IndexerService {
     this.logger.debug(`Looking up for entries similar to ${path}`)
     const {size} = await this.getFileMetadata({
       filePath: path,
-      includeExif: false,
     })
 
     const algorithmIsExact: Record<HashingAlgorithmType, boolean> = {
@@ -495,20 +384,8 @@ export class IndexerService {
     return {exactHashes: exactMatches, similarityHashes: similarMatches}
   }
 
-  private async getFileMetadata({
-    filePath,
-    includeExif,
-  }: {
-    filePath: string
-    includeExif: boolean
-  }) {
+  private async getFileMetadata({filePath}: {filePath: string}) {
     const stats = await stat(filePath)
-
-    let exifData
-    if (includeExif) {
-      exifData = await extractExif(filePath)
-      this.metrics.exifExtracted++
-    }
 
     // We remove the subsecond part of the time as we store them as integers
     stats.mtime.setMilliseconds(0)
@@ -520,7 +397,6 @@ export class IndexerService {
       basename: nodePath.basename(filePath),
       extension: nodePath.extname(filePath),
       validatedAt: new Date(),
-      ...exifData,
     }
   }
 
@@ -531,5 +407,268 @@ export class IndexerService {
 
   elapsedMinutes(): number {
     return Math.floor(this.elapsedSeconds() / 60)
+  }
+
+  async syncFiles({
+    path,
+    limit,
+    minutes,
+    ignoreFileName,
+  }: {
+    path: string
+    limit?: number
+    minutes?: number
+    ignoreFileName?: string
+  }): Promise<void> {
+    path = expandPath(path)
+    this.logger.debug(`Indexing ${path}`)
+
+    await walkDirOrFile({
+      path,
+      options: {
+        ignoreFileName: ignoreFileName ?? null,
+      },
+      callback: async (filePath) => {
+        try {
+          this.metrics.filesCrawled++
+
+          await this.syncFile({
+            filePath,
+          })
+
+          const shouldStopForLimit =
+            limit !== undefined &&
+            Math.max(this.metrics.newFilesIndexed, this.metrics.filesHashed) >=
+              limit
+
+          const shouldStopForTime =
+            minutes !== undefined && this.elapsedMinutes() > minutes
+
+          return {
+            stop: shouldStopForLimit || shouldStopForTime,
+          }
+        } catch (error) {
+          this.logger.error(`Error processing ${filePath}`)
+          this.logger.error(`${error}`)
+          // Skip this file and continue
+          return {stop: false}
+        }
+      },
+    })
+  }
+
+  /**
+   * Syncs a single file with the index. Only adds new files, does not update existing ones.
+   */
+  private async syncFile({filePath}: {filePath: string}): Promise<void> {
+    this.logger.debug(`Processing file ${filePath}`)
+    const existingEntry = await this.databaseService.findFile(filePath)
+
+    if (existingEntry === null) {
+      this.logger.debug(`New file found: ${filePath}`)
+      const metadata = await this.getFileMetadata({filePath})
+      await this.databaseService.createFile(metadata)
+      this.metrics.newFilesIndexed++
+    } else {
+      this.logger.debug(`File already indexed: ${filePath}`)
+    }
+  }
+
+  async syncIndexedFiles({
+    path,
+    limit,
+    minutes,
+    ignoreFileName,
+    applyChanges,
+  }: {
+    path: string
+    limit?: number
+    minutes?: number
+    ignoreFileName?: string
+    applyChanges: boolean
+  }): Promise<void> {
+    path = expandPath(path)
+    this.logger.debug(`Verifying ${path}`)
+
+    const ignoreManager = new IgnoreManager(ignoreFileName ?? null)
+
+    const fileCount = await this.databaseService.countFilesInPath({path})
+    this.logger.debug(`${fileCount} indexed files in ${path}`)
+
+    const filesToProcess = limit ? Math.min(fileCount, limit) : fileCount
+
+    while (this.metrics.filesCrawled < filesToProcess) {
+      // Grab next batch of files
+      const files = await this.databaseService.findByValidityInPath({
+        path,
+        count: Math.min(100, filesToProcess - this.metrics.filesCrawled),
+      })
+
+      this.logger.debug(`Verifying ${files.length} files`)
+
+      for (const file of files) {
+        await this.syncIndexedFile({
+          indexedFile: file,
+          ignoreManager,
+          applyChanges,
+        })
+        this.metrics.filesCrawled++
+      }
+
+      // Time limit reached?
+      if (minutes !== undefined && this.elapsedMinutes() > minutes) {
+        break
+      }
+    }
+  }
+
+  /**
+   * Sync an index entry with the file system. Updates the index to reflect the current state of the file system.
+   */
+  private async syncIndexedFile({
+    indexedFile,
+    ignoreManager,
+    applyChanges,
+  }: {
+    indexedFile: IndexedFile
+    ignoreManager: IgnoreManager
+    applyChanges: boolean
+  }): Promise<void> {
+    // Remove if ignored
+    // Remove if does not exist
+    // Extract file metadata
+    // Detect changes
+    // Delete exif and hashes if changed
+
+    const markOffline = async (reason: string) => {
+      if (applyChanges) {
+        this.logger.debug(`Marking ${indexedFile.path} as offline. ${reason}`)
+        await this.databaseService.deleteFile({
+          indexedFileId: indexedFile.id,
+        })
+      } else {
+        this.logger.info(`File ${indexedFile.path} is offline. ${reason}`)
+      }
+    }
+
+    if (ignoreManager.shouldIgnore(indexedFile.path, false)) {
+      await markOffline('File is covered by an exclusion pattern')
+      return
+    }
+
+    let metadata
+    try {
+      metadata = await this.getFileMetadata({filePath: indexedFile.path})
+    } catch {
+      await markOffline('File does not exist')
+      return
+    }
+
+    if (
+      metadata.size !== indexedFile.size ||
+      metadata.mtime.getTime() !== indexedFile.mtime.getTime()
+    ) {
+      if (applyChanges) {
+        await this.databaseService.updateFile(indexedFile.id, metadata)
+        await this.databaseService.deleteFileExifMetadata({
+          indexedFileId: indexedFile.id,
+        })
+        await this.databaseService.deleteFileHashes({
+          indexedFileId: indexedFile.id,
+        })
+      } else {
+        this.logger.info(`File ${indexedFile.path} has changed`)
+      }
+    } else {
+      this.logger.debug(`File ${indexedFile.path} is unchanged`)
+      await this.databaseService.updateFileValidity({
+        indexedFileId: indexedFile.id,
+      })
+    }
+  }
+
+  async extractMissingExif({
+    limit,
+    minutes,
+  }: {
+    limit?: number
+    minutes?: number
+  }): Promise<void> {
+    const filesWithoutExif = this.databaseService.findFilesWithoutExif(10)
+
+    for await (const file of filesWithoutExif) {
+      await this.extractExif({indexedFile: file})
+      this.metrics.exifExtracted++
+
+      if (limit !== undefined && this.metrics.exifExtracted >= limit) {
+        break
+      }
+      // Time limit reached?
+      if (minutes !== undefined && this.elapsedMinutes() > minutes) {
+        break
+      }
+    }
+  }
+
+  async extractExif({indexedFile}: {indexedFile: IndexedFile}) {
+    this.logger.debug(`Extracting EXIF from ${indexedFile.path}`)
+    const exif = await extractExif(indexedFile.path)
+    this.logger.debug(`Storing EXIF data for ${indexedFile.path}`)
+    await this.databaseService.createExifMetadata({
+      exifMetadata: {
+        fileId: indexedFile.id,
+        ...exif,
+      },
+    })
+  }
+
+  async computeMissingHashes({
+    path,
+    limit,
+    minutes,
+    hashingAlgorithms,
+  }: {
+    path?: string
+    limit?: number
+    minutes?: number
+    hashingAlgorithms: HashingAlgorithmType[]
+  }): Promise<void> {
+    for await (const algorithm of hashingAlgorithms) {
+      this.logger.debug(
+        `Looking for files missing ${algorithm} hashes${
+          path ? ` in ${path}` : ''
+        }`
+      )
+
+      const filesWithoutHashes =
+        this.databaseService.findFilesWithMissingHashes({
+          algorithm,
+          pageSize: 200,
+          path,
+        })
+
+      for await (const file of filesWithoutHashes) {
+        this.logger.debug(
+          `[${this.metrics.filesHashed}] Processing ${file.path} for ${algorithm} hash`
+        )
+
+        try {
+          await this.hashFile({indexedFile: file, hashingAlgorithm: algorithm})
+        } catch (error) {
+          this.logger.error(`Error hashing ${file.path} for ${algorithm}`)
+          this.logger.error(`${error}`)
+        }
+
+        if (limit !== undefined && this.metrics.filesHashed >= limit) {
+          this.logger.debug(`Reached file limit of ${limit}`)
+          break
+        }
+        // Time limit reached?
+        if (minutes !== undefined && this.elapsedMinutes() > minutes) {
+          this.logger.debug(`Reached time limit of ${minutes} minutes`)
+          break
+        }
+      }
+    }
   }
 }

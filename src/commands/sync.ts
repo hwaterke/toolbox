@@ -3,9 +3,9 @@ import {IndexerService} from '../services/IndexerService.js'
 import {humanReadableSeconds} from '../utils.js'
 import {LoggerService} from '../services/LoggerService.js'
 
-export default class Crawl extends Command {
+export default class Sync extends Command {
   static description =
-    'index the folder provided, adding new files to the database'
+    'sync the database with the file system, updating and removing files when needed'
 
   static flags = {
     database: Flags.string({
@@ -13,9 +13,12 @@ export default class Crawl extends Command {
       description: 'database file',
       default: 'fs-index.db',
     }),
+    applyChanges: Flags.boolean({
+      description: 'apply changes to the file system',
+    }),
     limit: Flags.integer({
       char: 'l',
-      description: 'stop after indexing n files',
+      description: 'stop after scanning n files',
     }),
     minutes: Flags.integer({
       char: 'm',
@@ -38,7 +41,7 @@ export default class Crawl extends Command {
   }
 
   async run(): Promise<void> {
-    const {args, flags} = await this.parse(Crawl)
+    const {args, flags} = await this.parse(Sync)
 
     LoggerService.configure({
       logFolder: flags.logFolder,
@@ -46,11 +49,12 @@ export default class Crawl extends Command {
     })
 
     const indexer = new IndexerService(flags.database)
-    await indexer.syncFiles({
+    await indexer.syncIndexedFiles({
       path: args.path,
       limit: flags.limit,
       minutes: flags.minutes,
       ignoreFileName: flags.ignore,
+      applyChanges: flags.applyChanges,
     })
 
     LoggerService.getLogger().info(

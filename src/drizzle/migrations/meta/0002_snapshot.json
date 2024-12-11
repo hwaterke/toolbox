@@ -1,9 +1,111 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "3d73efa7-758d-41c2-855c-4e0f742e5cda",
-  "prevId": "66baa182-afca-4fa7-8051-a93c675a0483",
+  "id": "3df6b705-4b6c-4468-b704-6b2e58ba331a",
+  "prevId": "c7e065cf-e189-4118-8746-9bd56a66128a",
   "tables": {
+    "exif": {
+      "name": "exif",
+      "columns": {
+        "file_id": {
+          "name": "file_id",
+          "type": "text(24)",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "make": {
+          "name": "make",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "exif_date": {
+          "name": "exif_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "live_photo_source": {
+          "name": "live_photo_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "live_photo_target": {
+          "name": "live_photo_target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(datetime('now'))"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "exif_file_id_file_id_fk": {
+          "name": "exif_file_id_file_id_fk",
+          "tableFrom": "exif",
+          "tableTo": "file",
+          "columnsFrom": [
+            "file_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "hash": {
       "name": "hash",
       "columns": {
@@ -51,7 +153,22 @@
           "default": "(datetime('now'))"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "file_id_idx": {
+          "name": "file_id_idx",
+          "columns": [
+            "file_id"
+          ],
+          "isUnique": false
+        },
+        "algorithm_idx": {
+          "name": "algorithm_idx",
+          "columns": [
+            "algorithm"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "hash_file_id_file_id_fk": {
           "name": "hash_file_id_file_id_fk",
@@ -71,13 +188,14 @@
         "hash_algorithm_file_id_pk": {
           "columns": [
             "algorithm",
-            "file_id",
-            "version"
+            "version",
+            "file_id"
           ],
           "name": "hash_algorithm_file_id_pk"
         }
       },
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "file": {
       "name": "file",
@@ -146,84 +264,24 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(datetime('now'))"
-        },
-        "make": {
-          "name": "make",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "model": {
-          "name": "model",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "width": {
-          "name": "width",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "height": {
-          "name": "height",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "exif_date": {
-          "name": "exif_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "live_photo_source": {
-          "name": "live_photo_source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "live_photo_target": {
-          "name": "live_photo_target",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "latitude": {
-          "name": "latitude",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "longitude": {
-          "name": "longitude",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "exif_validated_at": {
-          "name": "exif_validated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "extension_idx": {
+          "name": "extension_idx",
+          "columns": [
+            "extension"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     }
   },
+  "views": {},
   "enums": {},
   "_meta": {
     "schemas": {},

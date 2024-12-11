@@ -1,27 +1,59 @@
-import {HashingAlgorithmType} from './HashingService.js'
-import {ExifMetadata} from '../utils.js'
+import Database from 'better-sqlite3'
+import {
+  and,
+  asc,
+  count,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  like,
+  sql,
+  sum,
+} from 'drizzle-orm'
+import {drizzle} from 'drizzle-orm/better-sqlite3'
 import {BetterSQLite3Database} from 'drizzle-orm/better-sqlite3/driver'
+import {migrate} from 'drizzle-orm/better-sqlite3/migrator'
+import {dirname, resolve} from 'node:path'
+import {fileURLToPath} from 'node:url'
 import * as schema from '../drizzle/schema.js'
 import {
   IndexedFile,
   IndexedFileWithHashes,
+  InsertExif,
   InsertIndexedFile,
-  hashTable,
   indexedFileTable,
 } from '../drizzle/schema.js'
-import Database from 'better-sqlite3'
-import {drizzle} from 'drizzle-orm/better-sqlite3'
-import {migrate} from 'drizzle-orm/better-sqlite3/migrator'
-import {dirname, resolve} from 'node:path'
-import {fileURLToPath} from 'node:url'
-import {and, asc, count, eq, gt, like, sum} from 'drizzle-orm'
+import {ExifMetadata} from '../utils.js'
+import {HashingAlgorithmByType, HashingAlgorithmType} from './HashingService.js'
+import {LoggerService} from './LoggerService.js'
 
 export class DatabaseService {
   private readonly db: BetterSQLite3Database<typeof schema>
 
-  constructor(databasePath: string, logQueries = false) {
+  constructor(databasePath: string) {
     const sqlite = new Database(databasePath)
-    this.db = drizzle(sqlite, {schema, logger: logQueries})
+    const logger = LoggerService.getLogger()
+
+    this.db = drizzle(sqlite, {
+      schema,
+      logger: {
+        logQuery: (query, params) => {
+          const stringifiedParams = params.map((p) => {
+            try {
+              return JSON.stringify(p)
+            } catch {
+              return String(p)
+            }
+          })
+          const paramsStr =
+            stringifiedParams.length > 0
+              ? ` -- params: [${stringifiedParams.join(', ')}]`
+              : ''
+          logger.debug(`${query}${paramsStr}`)
+        },
+      },
+    })
 
     migrate(this.db, {
       migrationsFolder: resolve(
@@ -32,10 +64,28 @@ export class DatabaseService {
   }
 
   async createFile(file: InsertIndexedFile) {
-    return this.db.insert(indexedFileTable).values(file).returning({
-      id: indexedFileTable.id,
-      path: indexedFileTable.path,
-    })
+    return this.db
+      .insert(indexedFileTable)
+      .values({
+        ...file,
+        extension:
+          file.extension === null ? null : file.extension?.toLowerCase(),
+      })
+      .returning({
+        id: indexedFileTable.id,
+        path: indexedFileTable.path,
+      })
+  }
+
+  async updateFile(id: string, file: InsertIndexedFile) {
+    return this.db
+      .update(indexedFileTable)
+      .set({
+        ...file,
+        extension:
+          file.extension === null ? null : file.extension?.toLowerCase(),
+      })
+      .where(eq(indexedFileTable.id, id))
   }
 
   async updateFileExifMetadata({
@@ -69,6 +119,135 @@ export class DatabaseService {
       .update(indexedFileTable)
       .set({validatedAt: new Date(), updatedAt: new Date()})
       .where(eq(indexedFileTable.id, indexedFileId))
+  }
+
+  async deleteFileExifMetadata({
+    indexedFileId,
+  }: {
+    indexedFileId: string
+  }): Promise<void> {
+    await this.db
+      .delete(schema.exifTable)
+      .where(eq(schema.exifTable.fileId, indexedFileId))
+  }
+
+  async deleteFileHashes({
+    indexedFileId,
+  }: {
+    indexedFileId: string
+  }): Promise<void> {
+    await this.db
+      .delete(schema.hashTable)
+      .where(eq(schema.hashTable.fileId, indexedFileId))
+  }
+
+  async createExifMetadata({
+    exifMetadata,
+  }: {
+    exifMetadata: InsertExif
+  }): Promise<void> {
+    await this.db.insert(schema.exifTable).values(exifMetadata)
+  }
+
+  async *findFilesWithoutExif(pageSize: number): AsyncGenerator<IndexedFile> {
+    let lastId: string | null = null
+
+    while (true) {
+      const results = await this.db
+        .select()
+        .from(indexedFileTable)
+        .leftJoin(
+          schema.exifTable,
+          eq(indexedFileTable.id, schema.exifTable.fileId)
+        )
+        .where(
+          and(
+            lastId ? gt(indexedFileTable.id, lastId) : undefined,
+            isNull(schema.exifTable.fileId)
+          )
+        )
+        .orderBy(indexedFileTable.id)
+        .limit(pageSize)
+
+      if (results.length === 0) {
+        break
+      }
+
+      lastId = results.at(-1)?.file.id ?? null
+
+      for (const file of results) {
+        yield file.file
+      }
+    }
+  }
+
+  async countFilesWithMissingHashes(
+    algorithm: HashingAlgorithmType
+  ): Promise<number> {
+    const hashingAlgorithm = HashingAlgorithmByType[algorithm]
+    const results = await this.db
+      .select({count: count()})
+      .from(indexedFileTable)
+      .leftJoin(
+        schema.hashTable,
+        and(
+          eq(indexedFileTable.id, schema.hashTable.fileId),
+          eq(schema.hashTable.algorithm, algorithm)
+        )
+      )
+      .where(
+        and(
+          isNull(schema.hashTable.fileId),
+          hashingAlgorithm.supportedFileTypes
+            ? inArray(
+                indexedFileTable.extension,
+                hashingAlgorithm.supportedFileTypes
+              )
+            : undefined
+        )
+      )
+
+    if (results.length === 0) {
+      return 0
+    }
+
+    return results[0].count
+  }
+
+  async *findFilesWithMissingHashes({
+    algorithm,
+    pageSize,
+    path,
+  }: {
+    algorithm: HashingAlgorithmType
+    pageSize: number
+    path?: string
+  }): AsyncGenerator<IndexedFile> {
+    let lastId: string | null = null
+
+    while (true) {
+      const results = await this.db
+        .select()
+        .from(indexedFileTable)
+        .where(
+          and(
+            lastId ? gt(indexedFileTable.id, lastId) : undefined,
+            sql`NOT EXISTS (SELECT 1 FROM ${schema.hashTable} WHERE ${schema.hashTable.fileId} = ${indexedFileTable.id} AND ${schema.hashTable.algorithm} = ${algorithm})`,
+            path ? like(indexedFileTable.path, `${path}%`) : undefined
+          )
+        )
+        .orderBy(indexedFileTable.id)
+        .limit(pageSize)
+
+      if (results.length === 0) {
+        break
+      }
+
+      for (const file of results) {
+        lastId = file.id
+        yield file
+      }
+    }
   }
 
   async createHash({
@@ -122,12 +301,6 @@ export class DatabaseService {
       with: {
         hashes: true,
       },
-    })
-  }
-
-  async findFilesByExifDate(exifDate: string): Promise<IndexedFile[]> {
-    return this.db.query.indexedFileTable.findMany({
-      where: eq(indexedFileTable.exifDate, exifDate),
     })
   }
 
@@ -219,38 +392,5 @@ export class DatabaseService {
       return 0
     }
     return results[0].count
-  }
-
-  async duplicates() {
-    const duplicateHashQuery = this.db
-      .select({
-        algorithm: hashTable.algorithm,
-        value: hashTable.value,
-        count: count().mapWith(Number).as('hash_count'),
-      })
-      .from(schema.hashTable)
-      .groupBy(hashTable.algorithm, hashTable.value)
-      .having(({count}) => gt(count, 1))
-      .as('duplicateHashQuery')
-
-    const result = await this.db
-      .select({
-        id: indexedFileTable.id,
-        path: indexedFileTable.path,
-        size: indexedFileTable.size,
-        value: hashTable.value,
-        algorithm: hashTable.algorithm,
-      })
-      .from(indexedFileTable)
-      .innerJoin(hashTable, eq(indexedFileTable.id, hashTable.fileId))
-      .innerJoin(
-        duplicateHashQuery,
-        and(
-          eq(hashTable.algorithm, duplicateHashQuery.algorithm),
-          eq(hashTable.value, duplicateHashQuery.value)
-        )
-      )
-
-    return result
   }
 }

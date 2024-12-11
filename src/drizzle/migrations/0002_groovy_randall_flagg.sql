@@ -1,1 +1,0 @@
-ALTER TABLE `file` DROP COLUMN `ctime`;

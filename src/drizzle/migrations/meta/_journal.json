@@ -1,33 +1,26 @@
 {
-  "version": "5",
+  "version": "7",
   "dialect": "sqlite",
   "entries": [
     {
       "idx": 0,
       "version": "6",
-      "when": 1715803174940,
-      "tag": "0000_daily_senator_kelly",
+      "when": 1732312573913,
+      "tag": "0000_adorable_warbound",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "6",
-      "when": 1716493683385,
-      "tag": "0001_classy_malice",
+      "when": 1733327460265,
+      "tag": "0001_fancy_ultron",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "6",
-      "when": 1720559857703,
-      "tag": "0002_groovy_randall_flagg",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1731951742164,
-      "tag": "0003_large_lockjaw",
+      "when": 1733349739948,
+      "tag": "0002_mushy_the_anarchist",
       "breakpoints": true
     }
   ]

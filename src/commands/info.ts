@@ -30,7 +30,7 @@ export default class Info extends Command {
     })
 
     const indexer = new IndexerService(flags.database)
-    await indexer.info({duplicates: flags.duplicates})
+    await indexer.info()
 
     LoggerService.getLogger().info(
       `Operation performed in ${humanReadableSeconds(indexer.elapsedSeconds())}`

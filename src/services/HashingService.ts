@@ -120,15 +120,17 @@ class FfmpegSha256 extends HashingAlgorithm {
   }
 }
 
-export class HashingService {
-  private readonly algorithms: Record<HashingAlgorithmType, HashingAlgorithm> =
-    {
-      [HashingAlgorithmType.BLAKE3]: new Blake3(),
-      [HashingAlgorithmType.XXHASH]: new Xxhash(),
-      [HashingAlgorithmType.IDENTIFY]: new Identify(),
-      [HashingAlgorithmType.FFMPG_SHA256]: new FfmpegSha256(),
-    }
+export const HashingAlgorithmByType: Record<
+  HashingAlgorithmType,
+  HashingAlgorithm
+> = {
+  [HashingAlgorithmType.BLAKE3]: new Blake3(),
+  [HashingAlgorithmType.XXHASH]: new Xxhash(),
+  [HashingAlgorithmType.IDENTIFY]: new Identify(),
+  [HashingAlgorithmType.FFMPG_SHA256]: new FfmpegSha256(),
+}
 
+export class HashingService {
   private logger = LoggerService.getLogger()
 
   async hash(
@@ -140,7 +142,7 @@ export class HashingService {
   } | null> {
     this.logger.debug(`Computing hash ${algorithm} for ${path}`)
 
-    const hashingAlgorithm = this.algorithms[algorithm]
+    const hashingAlgorithm = HashingAlgorithmByType[algorithm]
 
     if (!hashingAlgorithm.isFileSupported(path)) {
       this.logger.debug(`File type not supported for ${algorithm}`)

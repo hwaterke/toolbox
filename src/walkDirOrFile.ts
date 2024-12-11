@@ -9,7 +9,7 @@ type Options = {
   ignoreFileName: string | null
 }
 
-class IgnoreManager {
+export class IgnoreManager {
   private ignoreStack: {ig: Ignore; path: string}[] = []
   private logger = LoggerService.getLogger()
 

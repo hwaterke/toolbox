@@ -1,11 +1,10 @@
-import {Args, Command, Flags} from '@oclif/core'
+import {Command, Flags} from '@oclif/core'
 import {IndexerService} from '../services/IndexerService.js'
 import {humanReadableSeconds} from '../utils.js'
 import {LoggerService} from '../services/LoggerService.js'
 
-export default class Crawl extends Command {
-  static description =
-    'index the folder provided, adding new files to the database'
+export default class Exif extends Command {
+  static description = 'populate missing EXIF data for indexed files'
 
   static flags = {
     database: Flags.string({
@@ -15,15 +14,11 @@ export default class Crawl extends Command {
     }),
     limit: Flags.integer({
       char: 'l',
-      description: 'stop after indexing n files',
+      description: 'stop after processing n files',
     }),
     minutes: Flags.integer({
       char: 'm',
       description: 'stop after n minutes',
-    }),
-    ignore: Flags.string({
-      char: 'i',
-      description: 'name of ignore file',
     }),
     debug: Flags.boolean({
       description: 'enable debug logging',
@@ -33,12 +28,8 @@ export default class Crawl extends Command {
     }),
   }
 
-  static args = {
-    path: Args.string({required: true}),
-  }
-
   async run(): Promise<void> {
-    const {args, flags} = await this.parse(Crawl)
+    const {flags} = await this.parse(Exif)
 
     LoggerService.configure({
       logFolder: flags.logFolder,
@@ -46,11 +37,9 @@ export default class Crawl extends Command {
     })
 
     const indexer = new IndexerService(flags.database)
-    await indexer.syncFiles({
-      path: args.path,
+    await indexer.extractMissingExif({
       limit: flags.limit,
       minutes: flags.minutes,
-      ignoreFileName: flags.ignore,
     })
 
     LoggerService.getLogger().info(
