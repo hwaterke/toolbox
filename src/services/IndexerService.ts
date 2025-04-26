@@ -361,6 +361,11 @@ export class IndexerService {
     )
 
     for (const algorithm of Object.values(HashingAlgorithmType)) {
+      // If there are no files with the same size, we can skip the exact hashing
+      if (filesWithSameSize.length === 0 && algorithmIsExact[algorithm]) {
+        continue
+      }
+
       const hashResult = await getHash(algorithm)
       if (hashResult) {
         const filesWithSameHash =
