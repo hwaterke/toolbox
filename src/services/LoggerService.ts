@@ -5,16 +5,24 @@ import path from 'node:path'
 class Logger {
   constructor(private logger: winston.Logger) {}
 
-  debug(message: string): void {
-    this.logger.debug(message)
+  debug(message: string, ...meta: unknown[]): void {
+    this.logger.debug(message, meta)
   }
 
-  info(message: string): void {
-    this.logger.info(message)
+  info(message: string, ...meta: unknown[]): void {
+    this.logger.info(message, meta)
   }
 
-  error(message: string): void {
-    this.logger.error(message)
+  warn(message: string, ...meta: unknown[]): void {
+    this.logger.warn(message, meta)
+  }
+
+  error(message: string, ...meta: unknown[]): void {
+    this.logger.error(message, meta)
+  }
+
+  command(command: string, isDryRun: boolean): void {
+    this.logger.info(command, {isDryRun})
   }
 
   isDebug(): boolean {
@@ -53,9 +61,10 @@ export class LoggerService {
             format: winston.format.combine(
               winston.format.colorize(),
               winston.format.timestamp(),
-              winston.format.printf(({timestamp, level, message}) => {
-                return `${timestamp} [${level}]: ${message}`
-              })
+              winston.format.printf(
+                ({timestamp, level, message}) =>
+                  `${timestamp} [${level}]: ${message}`
+              )
             ),
           })
         )

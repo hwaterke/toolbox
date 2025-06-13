@@ -63,6 +63,10 @@ export class DatabaseService {
     })
   }
 
+  getDatabase() {
+    return this.db
+  }
+
   async createFile(file: InsertIndexedFile) {
     return this.db
       .insert(indexedFileTable)

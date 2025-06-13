@@ -25,7 +25,6 @@ export class IgnoreManager {
       const ignoreFileContent = await readFile(ignoreFilePath, 'utf8')
       this.logger.debug(`Adding ignore file: ${ignoreFilePath}`)
       this.ignoreStack.push({
-        // @ts-expect-error - ignore types are wrong
         ig: ignore().add(ignoreFileContent),
         path: dirPath,
       })

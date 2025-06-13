@@ -1,8 +1,7 @@
 const numberFormatter = new Intl.NumberFormat('en-US')
 
-export const formatNumber = (number: number): string => {
-  return numberFormatter.format(number)
-}
+export const formatNumber = (number: number): string =>
+  numberFormatter.format(number)
 
 export function formatBytes(bytes: number) {
   if (bytes === 0) return '0 Bytes'
