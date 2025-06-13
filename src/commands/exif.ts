@@ -37,6 +37,8 @@ export default class Exif extends Command {
     })
 
     const indexer = new IndexerService(flags.database)
+    await indexer.init()
+
     await indexer.extractMissingExif({
       limit: flags.limit,
       minutes: flags.minutes,

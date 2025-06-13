@@ -1,4 +1,3 @@
-import Database from 'better-sqlite3'
 import {
   and,
   asc,
@@ -11,31 +10,29 @@ import {
   sql,
   sum,
 } from 'drizzle-orm'
-import {drizzle} from 'drizzle-orm/better-sqlite3'
-import {BetterSQLite3Database} from 'drizzle-orm/better-sqlite3/driver'
-import {migrate} from 'drizzle-orm/better-sqlite3/migrator'
+import {drizzle, LibSQLDatabase} from 'drizzle-orm/libsql'
+import {migrate} from 'drizzle-orm/libsql/migrator'
 import {dirname, resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import * as schema from '../drizzle/schema.js'
 import {
   IndexedFile,
+  indexedFileTable,
   IndexedFileWithHashes,
   InsertExif,
   InsertIndexedFile,
-  indexedFileTable,
 } from '../drizzle/schema.js'
 import {ExifMetadata} from '../utils.js'
 import {HashingAlgorithmByType, HashingAlgorithmType} from './HashingService.js'
 import {LoggerService} from './LoggerService.js'
 
 export class DatabaseService {
-  private readonly db: BetterSQLite3Database<typeof schema>
+  private readonly db: LibSQLDatabase<typeof schema>
 
   constructor(databasePath: string) {
-    const sqlite = new Database(databasePath)
     const logger = LoggerService.getLogger()
 
-    this.db = drizzle(sqlite, {
+    this.db = drizzle(`file:${databasePath}`, {
       schema,
       logger: {
         logQuery: (query, params) => {
@@ -54,8 +51,10 @@ export class DatabaseService {
         },
       },
     })
+  }
 
-    migrate(this.db, {
+  async init() {
+    await migrate(this.db, {
       migrationsFolder: resolve(
         dirname(fileURLToPath(import.meta.url)),
         '../drizzle/migrations'

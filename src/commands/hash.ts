@@ -57,6 +57,7 @@ export default class Hash extends Command {
     }
 
     const indexer = new IndexerService(flags.database)
+    await indexer.init()
 
     await indexer.computeMissingHashes({
       limit: flags.limit,

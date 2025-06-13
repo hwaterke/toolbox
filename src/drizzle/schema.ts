@@ -19,7 +19,7 @@ export const indexedFileTable = sqliteTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => createId()),
-    path: text('path').notNull(),
+    path: text('path').notNull().unique(),
     size: integer('size').notNull(),
     mtime: integer('mtime', {mode: 'timestamp'}).notNull(),
     basename: text('basename').notNull(),

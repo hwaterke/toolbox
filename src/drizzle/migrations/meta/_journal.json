@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1732312573913,
-      "tag": "0000_adorable_warbound",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1733327460265,
-      "tag": "0001_fancy_ultron",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1733349739948,
-      "tag": "0002_mushy_the_anarchist",
+      "when": 1749816240869,
+      "tag": "0000_special_mastermind",
       "breakpoints": true
     }
   ]

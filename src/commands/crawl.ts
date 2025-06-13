@@ -46,6 +46,8 @@ export default class Crawl extends Command {
     })
 
     const indexer = new IndexerService(flags.database)
+    await indexer.init()
+
     await indexer.syncFiles({
       path: args.path,
       limit: flags.limit,

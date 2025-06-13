@@ -30,6 +30,8 @@ export default class Info extends Command {
     })
 
     const indexer = new IndexerService(flags.database)
+    await indexer.init()
+
     await indexer.info()
 
     LoggerService.getLogger().info(

@@ -24,6 +24,8 @@ CREATE TABLE `hash` (
 	FOREIGN KEY (`file_id`) REFERENCES `file`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE INDEX `file_id_idx` ON `hash` (`file_id`);--> statement-breakpoint
+CREATE INDEX `algorithm_idx` ON `hash` (`algorithm`);--> statement-breakpoint
 CREATE TABLE `file` (
 	`id` text(24) PRIMARY KEY NOT NULL,
 	`path` text NOT NULL,
@@ -35,3 +37,6 @@ CREATE TABLE `file` (
 	`created_at` integer DEFAULT (datetime('now')) NOT NULL,
 	`updated_at` integer DEFAULT (datetime('now')) NOT NULL
 );
+--> statement-breakpoint
+CREATE UNIQUE INDEX `file_path_unique` ON `file` (`path`);--> statement-breakpoint
+CREATE INDEX `extension_idx` ON `file` (`extension`);

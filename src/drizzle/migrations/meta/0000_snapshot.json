@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a39a727b-d8df-4c15-aee4-d9000e6764df",
+  "id": "3abcedc9-284d-4455-88c8-5d63c7efb90f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "exif": {
@@ -153,7 +153,22 @@
           "default": "(datetime('now'))"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "file_id_idx": {
+          "name": "file_id_idx",
+          "columns": [
+            "file_id"
+          ],
+          "isUnique": false
+        },
+        "algorithm_idx": {
+          "name": "algorithm_idx",
+          "columns": [
+            "algorithm"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "hash_file_id_file_id_fk": {
           "name": "hash_file_id_file_id_fk",
@@ -251,7 +266,22 @@
           "default": "(datetime('now'))"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "file_path_unique": {
+          "name": "file_path_unique",
+          "columns": [
+            "path"
+          ],
+          "isUnique": true
+        },
+        "extension_idx": {
+          "name": "extension_idx",
+          "columns": [
+            "extension"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

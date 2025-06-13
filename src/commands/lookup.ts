@@ -46,6 +46,8 @@ export default class Lookup extends Command {
     })
 
     const indexer = new IndexerService(flags.database)
+    await indexer.init()
+
     await indexer.lookup(args.path, {
       remove: flags.remove,
       removeSimilar: flags.removeSimilar,

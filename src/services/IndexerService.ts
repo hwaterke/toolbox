@@ -40,6 +40,10 @@ export class IndexerService {
     this.databaseService = new DatabaseService(databasePath)
   }
 
+  async init() {
+    await this.databaseService.init()
+  }
+
   async info(): Promise<void> {
     const fileCount = await this.databaseService.countFiles()
     this.logger.info(`${formatNumber(fileCount)} files indexed`)

@@ -49,6 +49,8 @@ export default class Sync extends Command {
     })
 
     const indexer = new IndexerService(flags.database)
+    await indexer.init()
+
     await indexer.syncIndexedFiles({
       path: args.path,
       limit: flags.limit,

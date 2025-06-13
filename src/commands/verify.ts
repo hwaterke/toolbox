@@ -54,6 +54,8 @@ export default class Verify extends Command {
     })
 
     const indexer = new IndexerService(flags.database)
+    await indexer.init()
+
     await indexer.verify(args.path, {
       limit: flags.limit,
       minutes: flags.minutes,

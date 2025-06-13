@@ -1,1 +1,0 @@
-CREATE INDEX `extension_idx` ON `file` (`extension`);
