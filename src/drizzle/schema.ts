@@ -33,6 +33,8 @@ export const indexedFileTable = sqliteTable(
       .notNull(),
   },
   (table) => ({
+    pathIdx: index('path_idx').on(table.path),
+    sizeIdx: index('size_idx').on(table.size),
     extensionIdx: index('extension_idx').on(table.extension),
   })
 )
@@ -77,6 +79,10 @@ export const hashTable = sqliteTable(
     }),
     fileIdIdx: index('file_id_idx').on(table.fileId),
     algorithmIdx: index('algorithm_idx').on(table.algorithm),
+    fileIdAlgorithmIdx: index('file_id_algorithm_idx').on(
+      table.fileId,
+      table.algorithm
+    ),
   })
 )
 

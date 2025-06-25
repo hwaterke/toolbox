@@ -1,0 +1,1 @@
+CREATE INDEX `file_id_algorithm_idx` ON `hash` (`file_id`,`algorithm`);
