@@ -80,6 +80,69 @@ export class DatabaseService {
       })
   }
 
+  async createFileIfNotExists(file: InsertIndexedFile): Promise<{
+    id: string
+    path: string
+    wasCreated: boolean
+  } | null> {
+    const result = await this.db
+      .insert(indexedFileTable)
+      .values({
+        ...file,
+        extension:
+          file.extension === null ? null : file.extension?.toLowerCase(),
+      })
+      .onConflictDoNothing({target: indexedFileTable.path})
+      .returning({
+        id: indexedFileTable.id,
+        path: indexedFileTable.path,
+      })
+
+    // If result is empty, the file already existed
+    if (result.length === 0) {
+      return null
+    }
+
+    return {
+      ...result[0],
+      wasCreated: true,
+    }
+  }
+
+  async createFilesIfNotExists(files: InsertIndexedFile[]): Promise<{
+    created: Array<{id: string; path: string}>
+    skipped: string[]
+  }> {
+    if (files.length === 0) {
+      return {created: [], skipped: []}
+    }
+
+    const result = await this.db
+      .insert(indexedFileTable)
+      .values(
+        files.map((file) => ({
+          ...file,
+          extension:
+            file.extension === null ? null : file.extension?.toLowerCase(),
+        }))
+      )
+      .onConflictDoNothing({target: indexedFileTable.path})
+      .returning({
+        id: indexedFileTable.id,
+        path: indexedFileTable.path,
+      })
+
+    const createdPaths = new Set(result.map((r) => r.path))
+    const skipped = files
+      .map((f) => f.path)
+      .filter((path) => !createdPaths.has(path))
+
+    return {
+      created: result,
+      skipped,
+    }
+  }
+
   async updateFile(id: string, file: InsertIndexedFile) {
     return this.db
       .update(indexedFileTable)
@@ -184,9 +247,13 @@ export class DatabaseService {
     }
   }
 
-  async countFilesWithMissingHashes(
+  async countFilesWithMissingHashes({
+    algorithm,
+    path,
+  }: {
     algorithm: HashingAlgorithmType
-  ): Promise<number> {
+    path?: string
+  }): Promise<number> {
     const hashingAlgorithm = HashingAlgorithmByType[algorithm]
     const results = await this.db
       .select({count: count()})
@@ -206,7 +273,8 @@ export class DatabaseService {
                 indexedFileTable.extension,
                 hashingAlgorithm.supportedFileTypes
               )
-            : undefined
+            : undefined,
+          path ? like(indexedFileTable.path, `${path}%`) : undefined
         )
       )
 

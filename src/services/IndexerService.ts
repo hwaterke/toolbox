@@ -471,12 +471,11 @@ export class IndexerService {
    */
   private async syncFile({filePath}: {filePath: string}): Promise<void> {
     this.logger.debug(`Processing file ${filePath}`)
-    const existingEntry = await this.databaseService.findFile(filePath)
+    const metadata = await this.getFileMetadata({filePath})
+    const result = await this.databaseService.createFileIfNotExists(metadata)
 
-    if (existingEntry === null) {
-      this.logger.debug(`New file found: ${filePath}`)
-      const metadata = await this.getFileMetadata({filePath})
-      await this.databaseService.createFile(metadata)
+    if (result) {
+      this.logger.debug(`New file indexed: ${filePath}`)
       this.metrics.newFilesIndexed++
     } else {
       this.logger.debug(`File already indexed: ${filePath}`)
