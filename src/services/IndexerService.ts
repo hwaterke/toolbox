@@ -8,6 +8,7 @@ import {IndexedFile, IndexedFileWithHashes} from '../drizzle/schema.js'
 import {IgnoreManager, walkDirOrFile} from '../walkDirOrFile.js'
 import {formatBytes, formatNumber} from '../utils/Formatter.js'
 import {LoggerService} from './LoggerService.js'
+import ora from 'ora'
 
 type VerifyOptions = {
   limit?: number
@@ -635,15 +636,34 @@ export class IndexerService {
     limit,
     minutes,
     hashingAlgorithms,
+    withProgress,
   }: {
     path?: string
     limit?: number
     minutes?: number
     hashingAlgorithms: HashingAlgorithmType[]
+    withProgress: boolean
   }): Promise<void> {
+    const spinner = withProgress
+      ? ora({
+          text: `Computing missing hashes`,
+        })
+      : null
+
     for await (const algorithm of hashingAlgorithms) {
       this.logger.debug(
         `Looking for files missing ${algorithm} hashes${
+          path ? ` in ${path}` : ''
+        }`
+      )
+
+      const count = await this.databaseService.countFilesWithMissingHashes({
+        algorithm,
+        path,
+      })
+
+      this.logger.debug(
+        `Found ${count} files missing ${algorithm} hashes${
           path ? ` in ${path}` : ''
         }`
       )
@@ -655,13 +675,23 @@ export class IndexerService {
           path,
         })
 
+      spinner?.start(`Hashing`)
       for await (const file of filesWithoutHashes) {
         this.logger.debug(
           `[${this.metrics.filesHashed}] Processing ${file.path} for ${algorithm} hash`
         )
 
         try {
+          if (spinner) {
+            spinner.text = `[${this.metrics.filesHashed}/${count}] Hashing ${file.path}`
+          }
+
           await this.hashFile({indexedFile: file, hashingAlgorithm: algorithm})
+          this.logger.debug(
+            `[${this.metrics.filesHashed}/${count}] Hashed. ${Math.floor(
+              this.elapsedSeconds() / 60
+            )}m`
+          )
         } catch (error) {
           this.logger.error(`Error hashing ${file.path} for ${algorithm}`)
           this.logger.error(`${error}`)
@@ -677,6 +707,7 @@ export class IndexerService {
           break
         }
       }
+      spinner?.stop()
     }
   }
 }

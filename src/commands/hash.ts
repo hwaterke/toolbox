@@ -30,6 +30,10 @@ export default class Hash extends Command {
     debug: Flags.boolean({
       description: 'enable debug logging',
     }),
+    progress: Flags.boolean({
+      description: 'show progress',
+      default: false,
+    }),
   }
 
   static args = {
@@ -64,6 +68,7 @@ export default class Hash extends Command {
       minutes: flags.minutes,
       hashingAlgorithms: algorithms,
       path: args.path,
+      withProgress: flags.progress,
     })
   }
 }
