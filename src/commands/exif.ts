@@ -26,6 +26,10 @@ export default class Exif extends Command {
     logFolder: Flags.string({
       description: 'folder to save logs',
     }),
+    progress: Flags.boolean({
+      description: 'show progress',
+      default: false,
+    }),
   }
 
   async run(): Promise<void> {
@@ -42,6 +46,7 @@ export default class Exif extends Command {
     await indexer.extractMissingExif({
       limit: flags.limit,
       minutes: flags.minutes,
+      withProgress: flags.progress,
     })
 
     LoggerService.getLogger().info(

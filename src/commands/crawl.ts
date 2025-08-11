@@ -31,6 +31,10 @@ export default class Crawl extends Command {
     logFolder: Flags.string({
       description: 'folder to save logs',
     }),
+    progress: Flags.boolean({
+      description: 'show progress',
+      default: false,
+    }),
   }
 
   static args = {
@@ -53,6 +57,7 @@ export default class Crawl extends Command {
       limit: flags.limit,
       minutes: flags.minutes,
       ignoreFileName: flags.ignore,
+      withProgress: flags.progress,
     })
 
     LoggerService.getLogger().info(

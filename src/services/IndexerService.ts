@@ -424,15 +424,24 @@ export class IndexerService {
     limit,
     minutes,
     ignoreFileName,
+    withProgress,
   }: {
     path: string
     limit?: number
     minutes?: number
     ignoreFileName?: string
+    withProgress: boolean
   }): Promise<void> {
     path = expandPath(path)
     this.logger.debug(`Indexing ${path}`)
 
+    const spinner = withProgress
+      ? ora({
+          text: `Indexing files`,
+        })
+      : null
+
+    spinner?.start(`Indexing files`)
     await walkDirOrFile({
       path,
       options: {
@@ -441,6 +450,10 @@ export class IndexerService {
       callback: async (filePath) => {
         try {
           this.metrics.filesCrawled++
+
+          if (spinner) {
+            spinner.text = `[${this.metrics.filesCrawled}] Indexing ${filePath}`
+          }
 
           await this.syncFile({
             filePath,
@@ -465,6 +478,7 @@ export class IndexerService {
         }
       },
     })
+    spinner?.stop()
   }
 
   /**
@@ -613,13 +627,26 @@ export class IndexerService {
   async extractMissingExif({
     limit,
     minutes,
+    withProgress,
   }: {
     limit?: number
     minutes?: number
+    withProgress: boolean
   }): Promise<void> {
+    const spinner = withProgress
+      ? ora({
+          text: `Extracting EXIF data`,
+        })
+      : null
+
     const filesWithoutExif = this.databaseService.findFilesWithoutExif(10)
 
+    spinner?.start(`Extracting EXIF data`)
     for await (const file of filesWithoutExif) {
+      if (spinner) {
+        spinner.text = `[${this.metrics.exifExtracted}] Extracting EXIF from ${file.path}`
+      }
+
       await this.extractExif({indexedFile: file})
       this.metrics.exifExtracted++
 
@@ -631,6 +658,7 @@ export class IndexerService {
         break
       }
     }
+    spinner?.stop()
   }
 
   async extractExif({indexedFile}: {indexedFile: IndexedFile}) {
