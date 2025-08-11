@@ -34,6 +34,10 @@ export default class Sync extends Command {
     logFolder: Flags.string({
       description: 'folder to save logs',
     }),
+    progress: Flags.boolean({
+      description: 'show progress',
+      default: false,
+    }),
   }
 
   static args = {
@@ -57,6 +61,7 @@ export default class Sync extends Command {
       minutes: flags.minutes,
       ignoreFileName: flags.ignore,
       applyChanges: flags.applyChanges,
+      withProgress: flags.progress,
     })
 
     LoggerService.getLogger().info(

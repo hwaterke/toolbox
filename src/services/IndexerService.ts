@@ -489,12 +489,14 @@ export class IndexerService {
     minutes,
     ignoreFileName,
     applyChanges,
+    withProgress,
   }: {
     path: string
     limit?: number
     minutes?: number
     ignoreFileName?: string
     applyChanges: boolean
+    withProgress: boolean
   }): Promise<void> {
     path = expandPath(path)
     this.logger.debug(`Verifying ${path}`)
@@ -506,6 +508,13 @@ export class IndexerService {
 
     const filesToProcess = limit ? Math.min(fileCount, limit) : fileCount
 
+    const spinner = withProgress
+      ? ora({
+          text: `Syncing indexed files`,
+        })
+      : null
+
+    spinner?.start(`Syncing indexed files`)
     while (this.metrics.filesCrawled < filesToProcess) {
       // Grab next batch of files
       const files = await this.databaseService.findByValidityInPath({
@@ -516,6 +525,10 @@ export class IndexerService {
       this.logger.debug(`Verifying ${files.length} files`)
 
       for (const file of files) {
+        if (spinner) {
+          spinner.text = `[${this.metrics.filesCrawled}/${filesToProcess}] Syncing ${file.path}`
+        }
+
         await this.syncIndexedFile({
           indexedFile: file,
           ignoreManager,
@@ -529,6 +542,7 @@ export class IndexerService {
         break
       }
     }
+    spinner?.stop()
   }
 
   /**
