@@ -120,12 +120,13 @@ searches for files within the database
 
 ```
 USAGE
-  $ fs-indexer lookup PATH [-d <value>] [--debug] [--remove] [--exif]
+  $ fs-indexer lookup PATH [-d <value>] [--debug] [--remove] [--exif] [--originalPaths <value>]
 
 FLAGS
   -d, --database=<value>  [default: fs-index.db] database file
       --debug             enable debug logging
       --exif              look for files with similar exif date
+      --originalPaths=<value>  comma-separated list of original paths to filter lookup results. Only files from these paths will be considered as potential matches.
       --remove            remove files if similar found in the index. Be careful with this flag. Only hashes are
                           compared, not the files content.
 

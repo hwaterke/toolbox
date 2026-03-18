@@ -31,6 +31,10 @@ export default class Lookup extends Command {
     logFolder: Flags.string({
       description: 'folder to save logs',
     }),
+    originalPaths: Flags.string({
+      description:
+        'comma-separated list of original paths to filter lookup results. Only files from these paths will be considered as potential matches.',
+    }),
   }
 
   static args = {
@@ -48,10 +52,19 @@ export default class Lookup extends Command {
     const indexer = new IndexerService(flags.database)
     await indexer.init()
 
+    // Parse original paths if provided
+    const originalPaths = flags.originalPaths
+      ? flags.originalPaths
+          .split(',')
+          .map((path) => path.trim())
+          .filter((path) => path.length > 0)
+      : undefined
+
     await indexer.lookup(args.path, {
       remove: flags.remove,
       removeSimilar: flags.removeSimilar,
       includeExif: flags.exif,
+      originalPaths,
     })
 
     LoggerService.getLogger().info(

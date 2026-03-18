@@ -21,6 +21,7 @@ type LookupOptions = {
   remove: boolean
   removeSimilar: boolean
   includeExif: boolean
+  originalPaths?: string[]
 }
 
 export class IndexerService {
@@ -78,7 +79,7 @@ export class IndexerService {
         this.logger.info(`Looking up ${filePath}`)
 
         const {exactHashes, similarityHashes} =
-          await this.lookupExistingEntries(filePath)
+          await this.lookupExistingEntries(filePath, options.originalPaths)
 
         let removed = false
 
@@ -149,13 +150,15 @@ export class IndexerService {
             .basename(filePath)
             .match(/^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}/)
           if (prefixMatch) {
-            const similarPrefix = await this.databaseService.findFilesByPrefix(
-              prefixMatch[0]
+            const allPrefix = await this.databaseService.findFilesByPrefix(
+              prefixMatch[0],
+              options.originalPaths
             )
+            const similarPrefix = allPrefix.filter((f) => f.path !== filePath)
             if (similarPrefix.length > 0) {
               this.logger.info(`Files with similar prefix`)
               for (const file of similarPrefix) {
-                this.logger.debug(`  ${file.path}`)
+                this.logger.info(`  ${file.path}`)
               }
             }
           }
@@ -323,7 +326,10 @@ export class IndexerService {
     }
   }
 
-  private async lookupExistingEntries(path: string): Promise<{
+  private async lookupExistingEntries(
+    path: string,
+    originalPaths?: string[]
+  ): Promise<{
     exactHashes: IndexedFile[]
     similarityHashes: IndexedFile[]
   }> {
@@ -360,7 +366,10 @@ export class IndexerService {
     const exactMatches: IndexedFile[] = []
     const similarMatches: IndexedFile[] = []
 
-    const filesWithSameSize = await this.databaseService.findFilesBySize(size)
+    const filesWithSameSize = await this.databaseService.findFilesBySize(
+      size,
+      originalPaths
+    )
     this.logger.debug(
       `Found ${filesWithSameSize.length} files with the same size`
     )
@@ -376,7 +385,8 @@ export class IndexerService {
         const filesWithSameHash =
           await this.databaseService.findFilesByHashValue(
             algorithm,
-            hashResult.hash
+            hashResult.hash,
+            originalPaths
           )
 
         for (const file of filesWithSameHash) {
@@ -715,6 +725,7 @@ export class IndexerService {
           algorithm,
           pageSize: 200,
           path,
+          orderByPathDesc: true,
         })
 
       spinner?.start(`Hashing`)

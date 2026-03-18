@@ -2,11 +2,14 @@ import {
   and,
   asc,
   count,
+  desc,
   eq,
   gt,
   inArray,
   isNull,
   like,
+  lt,
+  or,
   sql,
   sum,
 } from 'drizzle-orm'
@@ -289,34 +292,64 @@ export class DatabaseService {
     algorithm,
     pageSize,
     path,
+    orderByPathDesc,
   }: {
     algorithm: HashingAlgorithmType
     pageSize: number
     path?: string
+    orderByPathDesc?: boolean
   }): AsyncGenerator<IndexedFile> {
-    let lastId: string | null = null
+    if (orderByPathDesc) {
+      let lastPath: string | null = null
 
-    while (true) {
-      const results = await this.db
-        .select()
-        .from(indexedFileTable)
-        .where(
-          and(
-            lastId ? gt(indexedFileTable.id, lastId) : undefined,
-            sql`NOT EXISTS (SELECT 1 FROM ${schema.hashTable} WHERE ${schema.hashTable.fileId} = ${indexedFileTable.id} AND ${schema.hashTable.algorithm} = ${algorithm})`,
-            path ? like(indexedFileTable.path, `${path}%`) : undefined
+      while (true) {
+        const results = await this.db
+          .select()
+          .from(indexedFileTable)
+          .where(
+            and(
+              lastPath ? lt(indexedFileTable.path, lastPath) : undefined,
+              sql`NOT EXISTS (SELECT 1 FROM ${schema.hashTable} WHERE ${schema.hashTable.fileId} = ${indexedFileTable.id} AND ${schema.hashTable.algorithm} = ${algorithm})`,
+              path ? like(indexedFileTable.path, `${path}%`) : undefined
+            )
           )
-        )
-        .orderBy(indexedFileTable.id)
-        .limit(pageSize)
+          .orderBy(desc(indexedFileTable.path))
+          .limit(pageSize)
 
-      if (results.length === 0) {
-        break
+        if (results.length === 0) {
+          break
+        }
+
+        for (const file of results) {
+          lastPath = file.path
+          yield file
+        }
       }
+    } else {
+      let lastId: string | null = null
 
-      for (const file of results) {
-        lastId = file.id
-        yield file
+      while (true) {
+        const results = await this.db
+          .select()
+          .from(indexedFileTable)
+          .where(
+            and(
+              lastId ? gt(indexedFileTable.id, lastId) : undefined,
+              sql`NOT EXISTS (SELECT 1 FROM ${schema.hashTable} WHERE ${schema.hashTable.fileId} = ${indexedFileTable.id} AND ${schema.hashTable.algorithm} = ${algorithm})`,
+              path ? like(indexedFileTable.path, `${path}%`) : undefined
+            )
+          )
+          .orderBy(indexedFileTable.id)
+          .limit(pageSize)
+
+        if (results.length === 0) {
+          break
+        }
+
+        for (const file of results) {
+          lastId = file.id
+          yield file
+        }
       }
     }
   }
@@ -366,9 +399,22 @@ export class DatabaseService {
     return result ?? null
   }
 
-  async findFilesBySize(size: number) {
+  async findFilesBySize(size: number, originalPaths?: string[]) {
+    const conditions = [eq(indexedFileTable.size, size)]
+
+    // Add path filtering if original paths are provided
+    if (originalPaths && originalPaths.length > 0) {
+      conditions.push(
+        or(
+          ...originalPaths.map((path) =>
+            like(indexedFileTable.path, `${path}%`)
+          )
+        )!
+      )
+    }
+
     return this.db.query.indexedFileTable.findMany({
-      where: eq(indexedFileTable.size, size),
+      where: and(...conditions),
       with: {
         hashes: true,
       },
@@ -377,8 +423,28 @@ export class DatabaseService {
 
   async findFilesByHashValue(
     algorithm: HashingAlgorithmType,
-    hash: string
+    hash: string,
+    originalPaths?: string[]
   ): Promise<IndexedFile[]> {
+    const conditions = [
+      eq(schema.hashTable.algorithm, algorithm),
+      eq(schema.hashTable.value, hash),
+    ]
+
+    // Add path filtering if original paths are provided
+    if (originalPaths && originalPaths.length > 0) {
+      const pathConditions = originalPaths.map((path) =>
+        like(indexedFileTable.path, `${path}%`)
+      )
+      conditions.push(
+        or(
+          ...pathConditions.map((path) =>
+            like(indexedFileTable.path, `${path}%`)
+          )
+        )!
+      )
+    }
+
     const results = await this.db
       .select()
       .from(schema.hashTable)
@@ -386,19 +452,33 @@ export class DatabaseService {
         indexedFileTable,
         eq(schema.hashTable.fileId, indexedFileTable.id)
       )
-      .where(
-        and(
-          eq(schema.hashTable.algorithm, algorithm),
-          eq(schema.hashTable.value, hash)
-        )
-      )
+      .where(and(...conditions))
 
     return results.map((result) => result.file)
   }
 
-  async findFilesByPrefix(prefix: string): Promise<IndexedFile[]> {
+  async findFilesByPrefix(
+    prefix: string,
+    originalPaths?: string[]
+  ): Promise<IndexedFile[]> {
+    const conditions = [like(indexedFileTable.basename, `${prefix}%`)]
+
+    // Add path filtering if original paths are provided
+    if (originalPaths && originalPaths.length > 0) {
+      const pathConditions = originalPaths.map((path) =>
+        like(indexedFileTable.path, `${path}%`)
+      )
+      conditions.push(
+        or(
+          ...pathConditions.map((path) =>
+            like(indexedFileTable.path, `${path}%`)
+          )
+        )!
+      )
+    }
+
     return this.db.query.indexedFileTable.findMany({
-      where: like(indexedFileTable.basename, `${prefix}%`),
+      where: and(...conditions),
     })
   }
 
