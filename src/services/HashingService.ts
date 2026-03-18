@@ -140,8 +140,6 @@ export class HashingService {
     hash: string
     version: string
   } | null> {
-    this.logger.debug(`Computing hash ${algorithm} for ${path}`)
-
     const hashingAlgorithm = HashingAlgorithmByType[algorithm]
 
     if (!hashingAlgorithm.isFileSupported(path)) {
@@ -151,6 +149,8 @@ export class HashingService {
 
     const hash = await hashingAlgorithm.hash(path)
     const version = await hashingAlgorithm.getVersion()
+
+    this.logger.debug(`${algorithm} hash of ${path}: ${hash}`)
 
     return {hash, version}
   }
