@@ -1,6 +1,6 @@
-import {opendir, readFile, stat} from 'node:fs/promises'
-import * as nodePath from 'node:path'
 import ignore, {Ignore} from 'ignore'
+import {lstat, opendir, readFile} from 'node:fs/promises'
+import * as nodePath from 'node:path'
 import {LoggerService} from './services/LoggerService.js'
 
 type WalkCallback = (path: string) => Promise<{stop: boolean}>
@@ -67,13 +67,17 @@ export const walkDirOrFile = async ({
   const ignoreManager = new IgnoreManager(options.ignoreFileName)
 
   const recursiveWalk = async (subPath: string): Promise<{stop: boolean}> => {
-    const stats = await stat(subPath)
+    const stats = await lstat(subPath)
+
+    if (stats.isSymbolicLink()) {
+      return {stop: false}
+    }
 
     if (stats.isFile() && !ignoreManager.shouldIgnore(subPath, false)) {
       return await callback(subPath)
     }
 
-    if (stats.isDirectory() && !stats.isSymbolicLink()) {
+    if (stats.isDirectory()) {
       // Check if the directory should be ignored
       if (ignoreManager.shouldIgnore(subPath, true)) {
         return {stop: false}
@@ -93,7 +97,6 @@ export const walkDirOrFile = async ({
         }
 
         const filepath = nodePath.join(subPath, dirent.name)
-
         const result = await recursiveWalk(filepath)
         if (result.stop) {
           return result
