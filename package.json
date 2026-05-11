@@ -1,0 +1,29 @@
+{
+  "name": "file-utils",
+  "version": "1.0.0",
+  "author": "hwaterke",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "format": "prettier --write .",
+    "lint": "npx oxlint",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.4",
+    "oxlint": "^1.64.0",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,json,md}": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx}": [
+      "npx oxlint"
+    ]
+  }
+}
