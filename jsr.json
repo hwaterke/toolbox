@@ -7,6 +7,8 @@
     ".github/**",
     ".prettierrc.json",
     "package-lock.json",
-    "tsconfig.json"
+    "tsconfig.json",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ]
 }
