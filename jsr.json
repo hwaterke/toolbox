@@ -8,6 +8,8 @@
     ".prettierrc.json",
     "package-lock.json",
     "tsconfig.json",
+    "test/**",
+    "vitest.config.ts",
     "**/*.test.ts",
     "**/*.spec.ts"
   ]
