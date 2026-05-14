@@ -25,6 +25,14 @@ export type WalkFilesOptions = {
 
   sort?: (a: string, b: string) => number
 
+  /**
+   * When true together with `sort`, sort each folder's entries during
+   * traversal instead of buffering the entire tree. Streaming semantics are
+   * preserved and `total` stays undefined in `onFile`. Ignored if `sort` is
+   * not provided.
+   */
+  sortPerFolder?: boolean
+
   ignoreFileName?: string
 
   onFile?: (
@@ -118,6 +126,7 @@ export const walkFiles = async (options: WalkFilesOptions): Promise<void> => {
     filter,
     includeHidden = false,
     sort,
+    sortPerFolder = false,
     ignoreFileName,
     onFile,
     onError = defaultOnError,
@@ -136,7 +145,7 @@ export const walkFiles = async (options: WalkFilesOptions): Promise<void> => {
   const ignoreManager = ignoreFileName
     ? new IgnoreManager(ignoreFileName)
     : null
-  const useBuffer = sort !== undefined
+  const useBuffer = sort !== undefined && !sortPerFolder
   const buffered: string[] = []
   const errors: unknown[] = []
   let index = 0
@@ -182,38 +191,55 @@ export const walkFiles = async (options: WalkFilesOptions): Promise<void> => {
     const ignoreFileAdded =
       (await ignoreManager?.addIgnoreFile(dirPath)) ?? false
 
-    try {
-      const dir = await opendir(dirPath)
-      for await (const dirent of dir) {
-        if (isAborted()) return
+    const handleDirent = async (dirent: WalkDirent): Promise<void> => {
+      if (ignoreFileName && dirent.name === ignoreFileName) return
 
-        if (ignoreFileName && dirent.name === ignoreFileName) continue
+      const childPath = nodePath.join(dirPath, dirent.name)
 
-        const childPath = nodePath.join(dirPath, dirent.name)
-
-        if (dirent.isSymbolicLink()) {
-          let targetStats
-          try {
-            targetStats = await stat(childPath)
-          } catch {
-            continue
-          }
-          if (targetStats.isFile()) {
-            if (await passesFilters(childPath, dirent, false)) {
-              await yieldFile(childPath)
-            }
-          }
-          continue
+      if (dirent.isSymbolicLink()) {
+        let targetStats
+        try {
+          targetStats = await stat(childPath)
+        } catch {
+          return
         }
-
-        if (dirent.isDirectory()) {
-          if (await passesFilters(childPath, dirent, true)) {
-            await walkDir(childPath)
-          }
-        } else if (dirent.isFile()) {
+        if (targetStats.isFile()) {
           if (await passesFilters(childPath, dirent, false)) {
             await yieldFile(childPath)
           }
+        }
+        return
+      }
+
+      if (dirent.isDirectory()) {
+        if (await passesFilters(childPath, dirent, true)) {
+          await walkDir(childPath)
+        }
+      } else if (dirent.isFile()) {
+        if (await passesFilters(childPath, dirent, false)) {
+          await yieldFile(childPath)
+        }
+      }
+    }
+
+    try {
+      const dir = await opendir(dirPath)
+      if (sort !== undefined && sortPerFolder) {
+        const dirents = []
+        for await (const dirent of dir) {
+          dirents.push(dirent)
+        }
+        dirents.sort((a, b) =>
+          sort(nodePath.join(dirPath, a.name), nodePath.join(dirPath, b.name))
+        )
+        for (const dirent of dirents) {
+          if (isAborted()) return
+          await handleDirent(dirent)
+        }
+      } else {
+        for await (const dirent of dir) {
+          if (isAborted()) return
+          await handleDirent(dirent)
         }
       }
     } finally {
