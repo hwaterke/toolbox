@@ -4,6 +4,7 @@
   "license": "MIT",
   "exports": "./src/index.ts",
   "exclude": [
+    ".husky/**",
     ".github/**",
     ".prettierrc.json",
     "package-lock.json",
