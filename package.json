@@ -17,6 +17,7 @@
   "files": [
     "./bin",
     "./dist",
+    "./python",
     "./oclif.manifest.json"
   ],
   "oclif": {

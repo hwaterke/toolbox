@@ -1,4 +1,4 @@
-FROM node:22.9-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN apk add --no-cache alpine-sdk python3
@@ -22,9 +22,9 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     mv ffmpeg-*/ffmpeg /usr/local/bin/ffmpeg && \
     mv ffmpeg-*/ffprobe /usr/local/bin/ffprobe
 
-FROM node:22.9-alpine
+FROM node:24-alpine
 WORKDIR /app
-ENV EXIFTOOL_VERSION=13.02
+ENV EXIFTOOL_VERSION=13.52
 RUN apk add --no-cache \
     perl \
     make \
@@ -52,3 +52,5 @@ COPY --from=builder /app/dist ./dist/
 COPY --from=builder /app/bin ./bin/
 COPY --from=ffmpeg-downloader /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
 COPY --from=ffmpeg-downloader /usr/local/bin/ffprobe /usr/local/bin/ffprobe
+
+ENTRYPOINT [ "/app/bin/run.js" ]

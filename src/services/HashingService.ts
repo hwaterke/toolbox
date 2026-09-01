@@ -1,5 +1,7 @@
 import {exec as callbackExec} from 'node:child_process'
-import {extname} from 'node:path'
+import {existsSync} from 'node:fs'
+import {dirname, extname, join, resolve} from 'node:path'
+import {fileURLToPath} from 'node:url'
 import {promisify} from 'node:util'
 import {LoggerService} from './LoggerService.js'
 
@@ -11,6 +13,7 @@ export enum HashingAlgorithmType {
   BLAKE3 = 'BLAKE3',
   FFMPG_SHA256 = 'FFMPG_SHA256',
   IDENTIFY = 'IDENTIFY',
+  RAWPY_RAW_VISIBLE_SHA256 = 'RAWPY_RAW_VISIBLE_SHA256',
   XXHASH = 'XXHASH',
 }
 
@@ -38,6 +41,23 @@ abstract class HashingAlgorithm {
     }
     return this.version
   }
+}
+
+const findPackageRoot = (startDir: string): string => {
+  let current = resolve(startDir)
+
+  for (let i = 0; i < 10; i++) {
+    if (existsSync(join(current, 'package.json'))) {
+      return current
+    }
+    const parent = resolve(current, '..')
+    if (parent === current) {
+      break
+    }
+    current = parent
+  }
+
+  return resolve(startDir)
 }
 
 class Blake3 extends HashingAlgorithm {
@@ -76,14 +96,12 @@ class Identify extends HashingAlgorithm {
   readonly type = HashingAlgorithmType.IDENTIFY
   readonly supportedFileTypes = [
     '.bmp',
-    '.dng',
     '.gif',
     '.heic',
     '.ico',
     '.jfif',
     '.jpeg',
     '.jpg',
-    '.nef',
     '.png',
     '.svg',
     '.tiff',
@@ -120,6 +138,39 @@ class FfmpegSha256 extends HashingAlgorithm {
   }
 }
 
+class RawpyRawVisibleSha256 extends HashingAlgorithm {
+  readonly type = HashingAlgorithmType.RAWPY_RAW_VISIBLE_SHA256
+  readonly supportedFileTypes = ['.nef', '.dng']
+
+  private getPythonProjectDir(): string {
+    const here = dirname(fileURLToPath(import.meta.url))
+    const pkgRoot = findPackageRoot(here)
+    return resolve(pkgRoot, 'python')
+  }
+
+  private getScriptPath(): string {
+    return resolve(this.getPythonProjectDir(), 'raw_visible_hash.py')
+  }
+
+  async hash(path: string): Promise<string> {
+    const projectDir = this.getPythonProjectDir()
+    const scriptPath = this.getScriptPath()
+    const {stdout} = await exec(
+      `uv run --project "${projectDir}" python "${scriptPath}" --path "${path}"`
+    )
+    return stdout.trim()
+  }
+
+  async getToolVersion(): Promise<string> {
+    const projectDir = this.getPythonProjectDir()
+    const scriptPath = this.getScriptPath()
+    const {stdout} = await exec(
+      `uv run --project "${projectDir}" python "${scriptPath}" --version`
+    )
+    return stdout.trim() || UNKNOW_VERSION
+  }
+}
+
 export const HashingAlgorithmByType: Record<
   HashingAlgorithmType,
   HashingAlgorithm
@@ -128,6 +179,7 @@ export const HashingAlgorithmByType: Record<
   [HashingAlgorithmType.XXHASH]: new Xxhash(),
   [HashingAlgorithmType.IDENTIFY]: new Identify(),
   [HashingAlgorithmType.FFMPG_SHA256]: new FfmpegSha256(),
+  [HashingAlgorithmType.RAWPY_RAW_VISIBLE_SHA256]: new RawpyRawVisibleSha256(),
 }
 
 export class HashingService {

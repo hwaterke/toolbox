@@ -343,6 +343,7 @@ export class IndexerService {
       [HashingAlgorithmType.BLAKE3]: true,
       [HashingAlgorithmType.IDENTIFY]: false,
       [HashingAlgorithmType.FFMPG_SHA256]: false,
+      [HashingAlgorithmType.RAWPY_RAW_VISIBLE_SHA256]: false,
     }
 
     // Hashes of the file being looked up
