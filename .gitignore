@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+.idea/
+.venv/
+
+# Databases live outside the repo.
+*.db
