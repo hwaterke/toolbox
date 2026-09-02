@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    versioning-strategy: increase
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'chalk'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'fs-extra'
+      - dependency-name: 'globby'
+        update-types: ['version-update:semver-major']

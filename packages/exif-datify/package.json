@@ -1,0 +1,65 @@
+{
+  "name": "exif-datify",
+  "description": "CLI to rename files with date and time information from Exif data",
+  "version": "0.0.10",
+  "author": "Harold Waterkeyn",
+  "license": "MIT",
+  "repository": "hwaterke/exif-datify",
+  "homepage": "https://github.com/hwaterke/exif-datify",
+  "bugs": "https://github.com/hwaterke/exif-datify/issues",
+  "type": "module",
+  "exports": "./lib/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "exif-datify": "./bin/run.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "/bin",
+    "/dist",
+    "/oclif.manifest.json"
+  ],
+  "oclif": {
+    "bin": "exif-datify",
+    "dirname": "exif-datify",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@oclif/plugin-help"
+    ]
+  },
+  "scripts": {
+    "build": "shx rm -rf dist && tsc -b",
+    "lint": "eslint . --ext .ts",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "format": "prettier --write .",
+    "prepack": "npm run build && oclif manifest && oclif readme",
+    "version": "oclif readme && git add README.md",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hwaterke/file-utils": "npm:@jsr/hwaterke__file-utils@^0.0.2",
+    "@hwaterke/media-probe": "npm:@jsr/hwaterke__media-probe@^0.0.16",
+    "@oclif/core": "^4",
+    "@oclif/plugin-help": "^6",
+    "chalk": "^5",
+    "luxon": "^3"
+  },
+  "devDependencies": {
+    "@oclif/prettier-config": "^0.2.1",
+    "@types/luxon": "^3",
+    "@types/node": "^24",
+    "eslint": "^8",
+    "eslint-config-oclif": "^6",
+    "eslint-config-oclif-typescript": "^3",
+    "eslint-config-prettier": "^10",
+    "globby": "^16",
+    "oclif": "^4",
+    "prettier": "^3",
+    "shx": "^0.4.0",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.6.0",
+    "typescript": "^5"
+  }
+}
