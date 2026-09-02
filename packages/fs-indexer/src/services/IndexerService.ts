@@ -56,7 +56,7 @@ export class IndexerService {
       `${formatBytes(totalSize)} - ${formatNumber(totalSize)} bytes`
     )
 
-    for await (const algorithm of Object.values(HashingAlgorithmType)) {
+    for (const algorithm of Object.values(HashingAlgorithmType)) {
       const algoHashCount = await this.databaseService.countHashes(algorithm)
       this.logger.info(
         `${algoHashCount} hashes (${algorithm}) - ${Math.round(
@@ -246,7 +246,7 @@ export class IndexerService {
         )
       }
 
-      for await (const hashingAlgorithm of options.hashingAlgorithms) {
+      for (const hashingAlgorithm of options.hashingAlgorithms) {
         const existingHash = file.hashes.find(
           (hash) => hash.algorithm === hashingAlgorithm
         )
@@ -483,7 +483,7 @@ export class IndexerService {
           }
         } catch (error) {
           this.logger.error(`Error processing ${filePath}`)
-          this.logger.error(`${error}`)
+          this.logger.error(String(error))
           // Skip this file and continue
           return {stop: false}
         }
@@ -703,7 +703,7 @@ export class IndexerService {
         })
       : null
 
-    for await (const algorithm of hashingAlgorithms) {
+    for (const algorithm of hashingAlgorithms) {
       this.logger.debug(
         `Looking for files missing ${algorithm} hashes${
           path ? ` in ${path}` : ''
@@ -748,7 +748,7 @@ export class IndexerService {
           )
         } catch (error) {
           this.logger.error(`Error hashing ${file.path} for ${algorithm}`)
-          this.logger.error(`${error}`)
+          this.logger.error(String(error))
         }
 
         if (limit !== undefined && this.metrics.filesHashed >= limit) {

@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 
 export const Logger = {
-  debug(message: string, ...meta: unknown[]) {
+  debug(_message: string, ..._meta: unknown[]) {
     // console.debug(message, ...meta)
   },
   info(message: string, ...meta: unknown[]) {

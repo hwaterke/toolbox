@@ -32,7 +32,7 @@ describe('crawl', () => {
 
   describe('basic functionality', () => {
     it('indexes an empty directory', async () => {
-      const {stdout, stderr} = await runCommand([
+      const {stdout: _stdout, stderr: _stderr} = await runCommand([
         'crawl',
         contentDir,
         '-d',

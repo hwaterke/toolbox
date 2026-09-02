@@ -81,7 +81,7 @@ export default class GroupByModel extends Command {
           this.log(`${fileName} -> ${destinationPath}`)
           totalProcessed++
         } catch (error) {
-          this.log(chalk.red(`Error processing file ${file}: ${error}`))
+          this.log(chalk.red(`Error processing file ${file}: ${String(error)}`))
         }
       },
       onFile: defaultProgressLogger((message) => this.log(message)),

@@ -1,6 +1,7 @@
 # RAW hashing helper (rawpy)
 
-This folder contains the Python helper used by the `RAWPY_RAW_VISIBLE_SHA256` hashing algorithm.
+This folder contains the Python helper used by the `RAWPY_RAW_VISIBLE_SHA256`
+hashing algorithm.
 
 ## Setup (mise + uv)
 
@@ -29,4 +30,3 @@ Version string:
 ```bash
 uv run --project python python python/raw_visible_hash.py --version
 ```
-

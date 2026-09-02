@@ -24,9 +24,10 @@ export function sanitizeFilename(
 
   // 3. Remove characters that are illegal or problematic on common OSes
   // Windows: / \ ? < > : * | "
-  result = result.replace(/[\/\\?<>:*|"]/g, '')
+  result = result.replace(/[\\?<>:*|"/]/g, '')
 
   // 4. Remove control characters (ASCII control range)
+  // oxlint-disable-next-line no-control-regex -- matching them is the point
   result = result.replace(/[\x00-\x1f\x80-\x9f]/g, '')
 
   // 5. Remove anything that's not: letters, digits, dot, underscore, hyphen

@@ -67,7 +67,7 @@ export class LoggerService {
               winston.format.timestamp(),
               winston.format.printf(
                 ({timestamp, level, message}) =>
-                  `${timestamp} [${level}]: ${message}`
+                  `${String(timestamp)} [${level}]: ${String(message)}`
               )
             ),
           })

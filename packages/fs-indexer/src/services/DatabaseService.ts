@@ -430,12 +430,9 @@ export class DatabaseService {
 
     // Add path filtering if original paths are provided
     if (originalPaths && originalPaths.length > 0) {
-      const pathConditions = originalPaths.map((path) =>
-        like(indexedFileTable.path, `${path}%`)
-      )
       conditions.push(
         or(
-          ...pathConditions.map((path) =>
+          ...originalPaths.map((path) =>
             like(indexedFileTable.path, `${path}%`)
           )
         )!
@@ -462,12 +459,9 @@ export class DatabaseService {
 
     // Add path filtering if original paths are provided
     if (originalPaths && originalPaths.length > 0) {
-      const pathConditions = originalPaths.map((path) =>
-        like(indexedFileTable.path, `${path}%`)
-      )
       conditions.push(
         or(
-          ...pathConditions.map((path) =>
+          ...originalPaths.map((path) =>
             like(indexedFileTable.path, `${path}%`)
           )
         )!

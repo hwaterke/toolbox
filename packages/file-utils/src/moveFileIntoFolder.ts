@@ -64,7 +64,7 @@ export async function moveFileIntoFolder(
     destinationPath = await getAvailableSuffixedPath(destinationPath)
   } else {
     throw new Error(
-      `Unsupported ifExists option: ${options.ifExists satisfies never}`
+      `Unsupported ifExists option: ${String(options.ifExists satisfies never)}`
     )
   }
 

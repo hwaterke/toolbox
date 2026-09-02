@@ -24,8 +24,6 @@
     ]
   },
   "scripts": {
-    "lint": "eslint . --ext .ts",
-    "format": "prettier --write .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -38,11 +36,6 @@
   },
   "devDependencies": {
     "@types/luxon": "^3",
-    "@types/node": "^24",
-    "eslint": "^8",
-    "eslint-config-oclif": "^6",
-    "eslint-config-oclif-typescript": "^3",
-    "eslint-config-prettier": "^10",
-    "prettier": "^3"
+    "@types/node": "^24"
   }
 }

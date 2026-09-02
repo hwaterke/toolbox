@@ -7,7 +7,6 @@
   "type": "module",
   "scripts": {
     "test": "vitest",
-    "format": "prettier --write .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -16,7 +15,6 @@
   "devDependencies": {
     "@types/luxon": "^3",
     "@types/node": "^24",
-    "prettier": "^3",
     "vitest": "^4"
   },
   "engines": {

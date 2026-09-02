@@ -73,7 +73,6 @@ async function processVideo({
 
 async function processImage({
   path,
-  ext,
   logger,
   metadata,
   zone,
@@ -81,7 +80,6 @@ async function processImage({
   exifService,
 }: {
   path: string
-  ext: string
   logger: typeof Logger
   metadata: ExiftoolMetadata
   zone: string
@@ -162,7 +160,6 @@ export async function processGopro({
   if (['.JPG'].includes(ext)) {
     await processImage({
       path,
-      ext,
       logger,
       metadata,
       zone,

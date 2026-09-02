@@ -75,7 +75,9 @@ export const defaultProgressLogger =
   }
 
 const defaultOnError = (err: unknown, path: string): void => {
-  console.error(chalk.red(`Error while processing file: ${path}: ${err}`))
+  console.error(
+    chalk.red(`Error while processing file: ${path}: ${String(err)}`)
+  )
 }
 
 class IgnoreManager {
