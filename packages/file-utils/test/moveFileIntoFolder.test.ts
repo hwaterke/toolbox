@@ -3,7 +3,13 @@ import {readFile} from 'node:fs/promises'
 import path from 'node:path'
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest'
 import {moveFileIntoFolder} from '../src/moveFileIntoFolder.ts'
-import {makeTempDir, pathExists, rmTree, seedTree} from './utils/fileTree.ts'
+import {
+  listFilesRecursive,
+  makeTempDir,
+  pathExists,
+  rmTree,
+  seedTree,
+} from './utils/fileTree.ts'
 
 let root: string
 
@@ -278,6 +284,123 @@ describe('moveFileIntoFolder', () => {
         moveFileIntoFolder(source, dest, {ifExists: 'skip'})
       ).rejects.toMatchObject({code: 'EACCES'})
       expect(await pathExists(source)).toBe(true)
+    })
+  })
+
+  describe('dryRun', () => {
+    test('reports the move it would make and leaves the tree untouched', async () => {
+      await seedTree(root, {src: {'note.txt': 'hello'}})
+      const source = path.join(root, 'src', 'note.txt')
+      const dest = path.join(root, 'new', 'nested')
+      const before = await listFilesRecursive(root)
+
+      const result = await moveFileIntoFolder(source, dest, {
+        ifExists: 'skip',
+        dryRun: true,
+      })
+
+      expect(result).toEqual({
+        moved: true,
+        skipped: false,
+        sourcePath: source,
+        destinationPath: path.join(dest, 'note.txt'),
+      })
+      expect(await listFilesRecursive(root)).toEqual(before)
+      expect(await readFile(source, 'utf8')).toBe('hello')
+      expect(await pathExists(path.join(root, 'new'))).toBe(false)
+    })
+
+    test('performs no filesystem writes', async () => {
+      await seedTree(root, {src: {'note.txt': 'hello'}, dest: {}})
+      const mkdirSpy = vi.spyOn(fsPromises, 'mkdir')
+      const renameSpy = vi.spyOn(fsPromises, 'rename')
+      const copyFileSpy = vi.spyOn(fsPromises, 'copyFile')
+      const unlinkSpy = vi.spyOn(fsPromises, 'unlink')
+
+      await moveFileIntoFolder(
+        path.join(root, 'src', 'note.txt'),
+        path.join(root, 'dest'),
+        {ifExists: 'skip', dryRun: true}
+      )
+
+      expect(mkdirSpy).not.toHaveBeenCalled()
+      expect(renameSpy).not.toHaveBeenCalled()
+      expect(copyFileSpy).not.toHaveBeenCalled()
+      expect(unlinkSpy).not.toHaveBeenCalled()
+    })
+
+    test('reports destination_exists under ifExists: skip', async () => {
+      await seedTree(root, {
+        src: {'note.txt': 'new'},
+        dest: {'note.txt': 'old'},
+      })
+      const source = path.join(root, 'src', 'note.txt')
+      const dest = path.join(root, 'dest')
+
+      const result = await moveFileIntoFolder(source, dest, {
+        ifExists: 'skip',
+        dryRun: true,
+      })
+
+      expect(result).toEqual({
+        moved: false,
+        skipped: true,
+        sourcePath: source,
+        destinationPath: path.join(dest, 'note.txt'),
+        reason: 'destination_exists',
+      })
+      expect(await readFile(source, 'utf8')).toBe('new')
+      expect(await readFile(path.join(dest, 'note.txt'), 'utf8')).toBe('old')
+    })
+
+    test('reports the free suffixed path without creating it', async () => {
+      await seedTree(root, {
+        src: {'note.txt': 'new'},
+        dest: {'note.txt': '0', 'note_1.txt': '1'},
+      })
+
+      const result = await moveFileIntoFolder(
+        path.join(root, 'src', 'note.txt'),
+        path.join(root, 'dest'),
+        {ifExists: 'suffix', dryRun: true}
+      )
+
+      expect(result).toMatchObject({
+        moved: true,
+        destinationPath: path.join(root, 'dest', 'note_2.txt'),
+      })
+      expect(await pathExists(path.join(root, 'dest', 'note_2.txt'))).toBe(
+        false
+      )
+    })
+
+    test('still refuses a symlink source', async () => {
+      await seedTree(root, {
+        'target.txt': 'data',
+        link: {__symlink: 'target.txt'},
+      })
+
+      await expect(
+        moveFileIntoFolder(path.join(root, 'link'), path.join(root, 'dest'), {
+          ifExists: 'skip',
+          dryRun: true,
+        })
+      ).rejects.toThrow(/must not be a symlink/)
+    })
+
+    test('dryRun: false moves for real', async () => {
+      await seedTree(root, {src: {'note.txt': 'hello'}, dest: {}})
+      const source = path.join(root, 'src', 'note.txt')
+      const dest = path.join(root, 'dest')
+
+      const result = await moveFileIntoFolder(source, dest, {
+        ifExists: 'skip',
+        dryRun: false,
+      })
+
+      expect(result.moved).toBe(true)
+      expect(await pathExists(source)).toBe(false)
+      expect(await readFile(path.join(dest, 'note.txt'), 'utf8')).toBe('hello')
     })
   })
 })
