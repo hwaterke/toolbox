@@ -9,15 +9,12 @@ from the filename alone.
 
 # Installation
 
-Not published. The CLI is a chezmoi-managed symlink into this checkout:
+Not published. Node 24 runs the TypeScript directly, so there is no build step —
+put a symlink to `bin/run.ts` somewhere on your `PATH`:
 
 ```sh-session
-$ ls -l ~/.local/bin/photo-archive
-photo-archive -> ~/Developer/toolbox/packages/photo-archive/bin/run.ts
+$ ln -s "$PWD/bin/run.ts" ~/.local/bin/photo-archive
 ```
-
-Node 24 runs the TypeScript directly, so there is no build step. The chezmoi
-source is `dot_local/bin/symlink_photo-archive.tmpl`.
 
 # Usage
 
