@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The media-probe suite shells out to exiftool.
+      - name: Install ExifTool
+        run: sudo apt-get install -y libimage-exiftool-perl
+
+      # Reads the version from the root packageManager field. Must run before
+      # setup-node, which caches the pnpm store.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      # The root script already passes --type-aware.
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Test
+        run: pnpm run test
