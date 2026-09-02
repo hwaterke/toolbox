@@ -16,7 +16,6 @@ describe('crawl', () => {
     // oclif loads the command through its own import, so the command gets a
     // second copy of LoggerService. This configures the copy the assertions
     // below use, not the command's.
-    LoggerService.reset()
     LoggerService.configure({debug: false})
 
     // Create a temporary test directory
@@ -98,6 +97,41 @@ describe('crawl', () => {
       const db = new DatabaseService(dbPath)
       const fileCount = await db.countFiles()
       expect(fileCount).toBe(1)
+    })
+  })
+
+  describe('logging', () => {
+    it('enables debug logging', async () => {
+      await fs.writeFile(path.join(contentDir, 'file1.txt'), 'test content 1')
+      await fs.writeFile(path.join(contentDir, 'file2.txt'), 'test content 2')
+
+      const {stdout} = await runCommand([
+        'crawl',
+        contentDir,
+        '-d',
+        dbPath,
+        '--debug',
+      ])
+      expect(stdout).toContain('debug')
+    })
+
+    it('writes logs to specified folder', async () => {
+      const logDir = path.join(testDir, 'logs')
+      await fs.mkdir(logDir)
+      await fs.writeFile(path.join(contentDir, 'file1.txt'), 'test content 1')
+
+      await runCommand([
+        'crawl',
+        contentDir,
+        '-d',
+        dbPath,
+        '--logFolder',
+        logDir,
+      ])
+
+      const logFiles = await fs.readdir(logDir)
+      expect(logFiles.length).toBeGreaterThan(0)
+      expect(logFiles[0]).toMatch(/indexer-\d{4}-\d{2}-\d{2}\.log/)
     })
   })
 

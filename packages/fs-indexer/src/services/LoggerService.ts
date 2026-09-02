@@ -44,52 +44,41 @@ export class LoggerService {
     logFolder?: string
     debug?: boolean
   }) {
-    if (this.logger === null) {
-      const transportArray: winston.transport[] = []
+    const transportArray: winston.transport[] = []
 
-      if (logFolder) {
-        transportArray.push(
-          new DailyRotateFile({
-            filename: path.join(logFolder, 'indexer-%DATE%.log'),
-            datePattern: 'YYYY-MM-DD',
-            maxSize: '20m',
-            format: winston.format.combine(
-              winston.format.timestamp(),
-              winston.format.json()
-            ),
-          })
-        )
-      } else {
-        transportArray.push(
-          new winston.transports.Console({
-            format: winston.format.combine(
-              winston.format.colorize(),
-              winston.format.timestamp(),
-              winston.format.printf(
-                ({timestamp, level, message}) =>
-                  `${String(timestamp)} [${level}]: ${String(message)}`
-              )
-            ),
-          })
-        )
-      }
-
-      this.logger = new Logger(
-        winston.createLogger({
-          level: debug ? 'debug' : 'info',
-          transports: transportArray,
+    if (logFolder) {
+      transportArray.push(
+        new DailyRotateFile({
+          filename: path.join(logFolder, 'indexer-%DATE%.log'),
+          datePattern: 'YYYY-MM-DD',
+          maxSize: '20m',
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.json()
+          ),
+        })
+      )
+    } else {
+      transportArray.push(
+        new winston.transports.Console({
+          format: winston.format.combine(
+            winston.format.colorize(),
+            winston.format.timestamp(),
+            winston.format.printf(
+              ({timestamp, level, message}) =>
+                `${String(timestamp)} [${level}]: ${String(message)}`
+            )
+          ),
         })
       )
     }
-  }
 
-  /**
-   * Drops the configured logger so a later configure() takes effect.
-   * configure() is a one-shot, which leaves every test in a file sharing the
-   * first test's log level.
-   */
-  public static reset() {
-    LoggerService.logger = null
+    LoggerService.logger = new Logger(
+      winston.createLogger({
+        level: debug ? 'debug' : 'info',
+        transports: transportArray,
+      })
+    )
   }
 
   public static getLogger(): Logger {
