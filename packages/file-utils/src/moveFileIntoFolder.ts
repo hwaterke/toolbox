@@ -12,6 +12,15 @@ interface MoveFileOptions {
    * - "suffix": move as "file_1.ext", "file_2.ext", etc.
    */
   ifExists: ExistingDestinationMode
+
+  /**
+   * When true, report what would happen without touching the filesystem.
+   *
+   * Every read-only check still runs — source validation, destination lookup
+   * and the suffix search — so the result matches what a real call returns.
+   * Only mkdir, rename, copy and unlink are skipped.
+   */
+  dryRun?: boolean
 }
 
 type MoveFileResult =
@@ -44,7 +53,11 @@ export async function moveFileIntoFolder(
     throw new Error(`Source is not a file: ${sourcePath}`)
   }
 
-  await fs.mkdir(destinationFolder, {recursive: true})
+  const dryRun = options.dryRun ?? false
+
+  if (!dryRun) {
+    await fs.mkdir(destinationFolder, {recursive: true})
+  }
 
   const fileName = path.basename(sourcePath)
 
@@ -68,7 +81,9 @@ export async function moveFileIntoFolder(
     )
   }
 
-  await moveAcrossDevicesSafe(sourcePath, destinationPath)
+  if (!dryRun) {
+    await moveAcrossDevicesSafe(sourcePath, destinationPath)
+  }
 
   return {
     moved: true,
