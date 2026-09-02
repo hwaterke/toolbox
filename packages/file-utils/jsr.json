@@ -1,0 +1,17 @@
+{
+  "name": "@hwaterke/file-utils",
+  "version": "0.0.2",
+  "license": "MIT",
+  "exports": "./src/index.ts",
+  "exclude": [
+    ".husky/**",
+    ".github/**",
+    ".prettierrc.json",
+    "package-lock.json",
+    "tsconfig.json",
+    "test/**",
+    "vitest.config.ts",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}
