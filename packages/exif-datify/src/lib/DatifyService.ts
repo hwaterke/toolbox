@@ -21,7 +21,11 @@ export class DatifyService {
   exiftoolService = new ExiftoolService({logger: Logger})
   liveVideoCache: Record<string, DateTime | null> = {}
 
-  constructor(private config: DatifyConfig) {}
+  private config: DatifyConfig
+
+  constructor(config: DatifyConfig) {
+    this.config = config
+  }
 
   async processFile(path: string) {
     const metadata = await this.exiftoolService.extractExifMetadata(path)

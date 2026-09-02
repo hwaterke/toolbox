@@ -15,7 +15,8 @@ import {
   EXIF_DATE_TIME_WITH_UTC_REGEX,
   TZ_OFFSET_REGEX,
 } from './utils.js'
-import {EXIF_TAGS, ExiftoolMetadata} from './types/ExiftoolMetadata.js'
+import {EXIF_TAGS} from './types/ExiftoolMetadata.js'
+import type {ExiftoolMetadata} from './types/ExiftoolMetadata.js'
 import {DateTime} from 'luxon'
 import type {Logger} from './types/Logger.js'
 
@@ -26,7 +27,11 @@ export type ExiftoolServiceConfig = {
 }
 
 export class ExiftoolService {
-  constructor(private config: ExiftoolServiceConfig) {}
+  private config: ExiftoolServiceConfig
+
+  constructor(config: ExiftoolServiceConfig) {
+    this.config = config
+  }
 
   /**
    * Returns the exif metadata stored on the file provided

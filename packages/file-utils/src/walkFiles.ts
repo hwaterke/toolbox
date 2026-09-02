@@ -81,7 +81,11 @@ const defaultOnError = (err: unknown, path: string): void => {
 class IgnoreManager {
   private ignoreStack: {ig: Ignore; path: string}[] = []
 
-  constructor(private readonly ignoreFileName: string) {}
+  private readonly ignoreFileName: string
+
+  constructor(ignoreFileName: string) {
+    this.ignoreFileName = ignoreFileName
+  }
 
   async addIgnoreFile(dirPath: string): Promise<boolean> {
     const ignoreFilePath = nodePath.join(dirPath, this.ignoreFileName)

@@ -1,4 +1,5 @@
-import ignore, {Ignore} from 'ignore'
+import ignore from 'ignore'
+import type {Ignore} from 'ignore'
 import {lstat, opendir, readFile} from 'node:fs/promises'
 import * as nodePath from 'node:path'
 import {LoggerService} from './services/LoggerService.js'
@@ -13,7 +14,11 @@ export class IgnoreManager {
   private ignoreStack: {ig: Ignore; path: string}[] = []
   private logger = LoggerService.getLogger()
 
-  constructor(private readonly ignoreFileName: string | null) {}
+  private readonly ignoreFileName: string | null
+
+  constructor(ignoreFileName: string | null) {
+    this.ignoreFileName = ignoreFileName
+  }
 
   async addIgnoreFile(dirPath: string) {
     if (this.ignoreFileName === null) {

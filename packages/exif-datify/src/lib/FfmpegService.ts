@@ -9,7 +9,11 @@ type FfmpegServiceConfig = {
 }
 
 export class FfmpegService {
-  constructor(private config: FfmpegServiceConfig) {}
+  private config: FfmpegServiceConfig
+
+  constructor(config: FfmpegServiceConfig) {
+    this.config = config
+  }
 
   async extractGpsCoordinatesFromSubtitles(path: string): Promise<{
     latitude: number

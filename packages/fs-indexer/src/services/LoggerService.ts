@@ -3,7 +3,11 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 import path from 'node:path'
 
 class Logger {
-  constructor(private logger: winston.Logger) {}
+  private logger: winston.Logger
+
+  constructor(logger: winston.Logger) {
+    this.logger = logger
+  }
 
   debug(message: string, ...meta: unknown[]): void {
     this.logger.debug(message, meta)

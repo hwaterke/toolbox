@@ -9,13 +9,16 @@ const exec = promisify(callbackExec)
 
 const UNKNOW_VERSION = 'unknown'
 
-export enum HashingAlgorithmType {
-  BLAKE3 = 'BLAKE3',
-  FFMPG_SHA256 = 'FFMPG_SHA256',
-  IDENTIFY = 'IDENTIFY',
-  RAWPY_RAW_VISIBLE_SHA256 = 'RAWPY_RAW_VISIBLE_SHA256',
-  XXHASH = 'XXHASH',
-}
+export const HashingAlgorithmType = {
+  BLAKE3: 'BLAKE3',
+  FFMPG_SHA256: 'FFMPG_SHA256',
+  IDENTIFY: 'IDENTIFY',
+  RAWPY_RAW_VISIBLE_SHA256: 'RAWPY_RAW_VISIBLE_SHA256',
+  XXHASH: 'XXHASH',
+} as const
+
+export type HashingAlgorithmType =
+  (typeof HashingAlgorithmType)[keyof typeof HashingAlgorithmType]
 
 abstract class HashingAlgorithm {
   abstract readonly type: HashingAlgorithmType
