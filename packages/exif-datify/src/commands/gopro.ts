@@ -1,7 +1,7 @@
 import {ExiftoolService} from '@hwaterke/media-probe'
 import {Args, Command, Flags} from '@oclif/core'
-import {Logger} from '../lib/Logger.js'
-import {processGopro} from '../lib/processGopro.js'
+import {Logger} from '../lib/Logger.ts'
+import {processGopro} from '../lib/processGopro.ts'
 import {
   compareAsc,
   defaultProgressLogger,

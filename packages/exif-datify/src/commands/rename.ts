@@ -1,5 +1,5 @@
 import {Args, Command, Flags} from '@oclif/core'
-import {DatifyService} from '../lib/DatifyService.js'
+import {DatifyService} from '../lib/DatifyService.ts'
 import {
   defaultProgressLogger,
   videosLastComparator,

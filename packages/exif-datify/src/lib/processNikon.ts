@@ -8,7 +8,7 @@ import {
 } from '@hwaterke/media-probe'
 import {DateTime} from 'luxon'
 import nodePath from 'node:path'
-import {Logger} from './Logger.js'
+import {Logger} from './Logger.ts'
 
 /*
 Example Nikon metadata (straight out of the camera):

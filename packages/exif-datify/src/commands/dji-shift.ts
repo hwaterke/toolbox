@@ -1,10 +1,10 @@
 import {Args, Command, Flags} from '@oclif/core'
-import {EXIF_DATE_TIME_FORMAT_WITH_TZ, updateTime} from '../lib/utils.js'
+import {EXIF_DATE_TIME_FORMAT_WITH_TZ, updateTime} from '../lib/utils.ts'
 import nodePath from 'node:path'
 import fs from 'node:fs'
 import {DateTime} from 'luxon'
 import {EXIF_TAGS, ExiftoolService} from '@hwaterke/media-probe'
-import {Logger} from '../lib/Logger.js'
+import {Logger} from '../lib/Logger.ts'
 import {
   compareAsc,
   defaultProgressLogger,

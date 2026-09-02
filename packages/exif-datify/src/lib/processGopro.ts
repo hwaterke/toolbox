@@ -8,8 +8,8 @@ import {
 } from '@hwaterke/media-probe'
 import {DateTime} from 'luxon'
 import nodePath from 'node:path'
-import {Logger} from './Logger.js'
-import {updateTime} from './utils.js'
+import {Logger} from './Logger.ts'
+import {updateTime} from './utils.ts'
 
 async function processVideo({
   path,

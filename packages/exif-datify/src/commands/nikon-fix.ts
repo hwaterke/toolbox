@@ -1,7 +1,7 @@
 import {EXIF_TAGS, ExiftoolService} from '@hwaterke/media-probe'
 import {Args, Command, Flags} from '@oclif/core'
 import nodePath from 'node:path'
-import {Logger} from '../lib/Logger.js'
+import {Logger} from '../lib/Logger.ts'
 import fs from 'node:fs'
 import {
   compareAsc,

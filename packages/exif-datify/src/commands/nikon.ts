@@ -1,7 +1,7 @@
 import {ExiftoolService} from '@hwaterke/media-probe'
 import {Args, Command, Flags} from '@oclif/core'
-import {Logger} from '../lib/Logger.js'
-import {processNikon} from '../lib/processNikon.js'
+import {Logger} from '../lib/Logger.ts'
+import {processNikon} from '../lib/processNikon.ts'
 import {
   compareAsc,
   defaultProgressLogger,

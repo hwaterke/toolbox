@@ -1,11 +1,11 @@
-import {ensureFile} from './utils.js'
+import {ensureFile} from './utils.ts'
 import {DateTime} from 'luxon'
 import * as nodePath from 'node:path'
 import chalk from 'chalk'
 import {constants} from 'node:fs'
 import {access, opendir, rename} from 'node:fs/promises'
 import {ExiftoolService} from '@hwaterke/media-probe'
-import {Logger} from './Logger.js'
+import {Logger} from './Logger.ts'
 
 export type DatifyConfig = {
   prefix: string

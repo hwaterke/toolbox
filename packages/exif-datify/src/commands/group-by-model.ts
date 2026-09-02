@@ -1,10 +1,10 @@
 import {Args, Command, Flags} from '@oclif/core'
 import {EXIF_TAGS, ExiftoolService} from '@hwaterke/media-probe'
-import {moveFileSafely} from '../lib/utils.js'
-import {Logger} from '../lib/Logger.js'
+import {moveFileSafely} from '../lib/utils.ts'
+import {Logger} from '../lib/Logger.ts'
 import nodePath from 'node:path'
 import chalk from 'chalk'
-import {sanitizeFilename} from '../lib/sanitizeFilename.js'
+import {sanitizeFilename} from '../lib/sanitizeFilename.ts'
 import {defaultProgressLogger, walkFiles} from '@hwaterke/file-utils'
 
 export default class GroupByModel extends Command {
