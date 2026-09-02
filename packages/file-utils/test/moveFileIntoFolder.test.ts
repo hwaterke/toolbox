@@ -2,8 +2,8 @@ import {promises as fsPromises} from 'node:fs'
 import {readFile} from 'node:fs/promises'
 import path from 'node:path'
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest'
-import {moveFileIntoFolder} from '../src/moveFileIntoFolder.js'
-import {makeTempDir, pathExists, rmTree, seedTree} from './utils/fileTree.js'
+import {moveFileIntoFolder} from '../src/moveFileIntoFolder.ts'
+import {makeTempDir, pathExists, rmTree, seedTree} from './utils/fileTree.ts'
 
 let root: string
 

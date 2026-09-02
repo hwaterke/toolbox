@@ -1,7 +1,7 @@
 import path from 'node:path'
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest'
-import {compareAsc, walkFiles} from '../src/walkFiles.js'
-import {makeTempDir, rmTree, seedTree} from './utils/fileTree.js'
+import {compareAsc, walkFiles} from '../src/walkFiles.ts'
+import {makeTempDir, rmTree, seedTree} from './utils/fileTree.ts'
 
 let root: string
 

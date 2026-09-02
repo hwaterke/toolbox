@@ -1,5 +1,5 @@
 import {describe, expect, test, vi} from 'vitest'
-import {defaultProgressLogger} from '../src/walkFiles.js'
+import {defaultProgressLogger} from '../src/walkFiles.ts'
 
 describe('defaultProgressLogger', () => {
   test('logs index/total when total is defined', () => {

@@ -1,8 +1,8 @@
-export {moveFileIntoFolder} from './moveFileIntoFolder.js'
+export {moveFileIntoFolder} from './moveFileIntoFolder.ts'
 export {
   walkFiles,
   compareAsc,
   compareDesc,
   videosLastComparator,
   defaultProgressLogger,
-} from './walkFiles.js'
+} from './walkFiles.ts'

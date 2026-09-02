@@ -1,5 +1,5 @@
 {
-  "name": "media-probe",
+  "name": "@hwaterke/media-probe",
   "version": "0.0.16",
   "description": "",
   "author": "hwaterke",
@@ -21,6 +21,7 @@
     "vitest": "^4"
   },
   "engines": {
-    "node": ">=20"
-  }
+    "node": ">=24"
+  },
+  "exports": "./src/index.ts"
 }

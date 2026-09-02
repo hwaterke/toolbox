@@ -3,7 +3,7 @@ import {
   compareAsc,
   compareDesc,
   videosLastComparator,
-} from '../src/walkFiles.js'
+} from '../src/walkFiles.ts'
 
 describe('compareAsc', () => {
   test('returns negative when a < b', () => {

@@ -14,11 +14,11 @@ import {
   EXIF_DATE_TIME_WITH_TZ_REGEX,
   EXIF_DATE_TIME_WITH_UTC_REGEX,
   TZ_OFFSET_REGEX,
-} from './utils.js'
-import {EXIF_TAGS} from './types/ExiftoolMetadata.js'
-import type {ExiftoolMetadata} from './types/ExiftoolMetadata.js'
+} from './utils.ts'
+import {EXIF_TAGS} from './types/ExiftoolMetadata.ts'
+import type {ExiftoolMetadata} from './types/ExiftoolMetadata.ts'
 import {DateTime} from 'luxon'
-import type {Logger} from './types/Logger.js'
+import type {Logger} from './types/Logger.ts'
 
 const exec = promisify(callbackExec)
 
