@@ -1,0 +1,12 @@
+[project]
+name = "fs-indexer-raw-hash"
+version = "0.1.0"
+description = "RAW hashing helper for fs-indexer (rawpy raw_image_visible)."
+requires-python = ">=3.12"
+dependencies = [
+  "rawpy>=0.25.0",
+]
+
+[project.scripts]
+fs-indexer-raw-visible-hash = "raw_visible_hash:main"
+

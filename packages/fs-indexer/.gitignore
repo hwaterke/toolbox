@@ -1,0 +1,15 @@
+*-debug.log
+*-error.log
+/.nyc_output
+/dist
+/lib
+/tmp
+node_modules
+oclif.manifest.json
+.idea
+.DS_Store
+
+# Test files
+*.db
+test-files
+test-folder
