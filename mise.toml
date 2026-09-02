@@ -1,0 +1,10 @@
+[tools]
+node = "24"
+python = "3.12"
+uv = "latest"
+
+[hooks]
+postinstall = "npx corepack enable"
+
+[settings]
+experimental = true
