@@ -1,13 +1,3 @@
-FROM node:24-alpine AS builder
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN apk add --no-cache alpine-sdk python3
-RUN npm install
-COPY src ./src
-COPY bin ./bin
-COPY tsconfig.json ./
-RUN npm run build
-
 FROM --platform=$BUILDPLATFORM alpine AS ffmpeg-downloader
 WORKDIR /ffmpeg
 ARG TARGETARCH
@@ -24,7 +14,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 
 FROM node:24-alpine
 WORKDIR /app
-ENV EXIFTOOL_VERSION=13.52
+ENV EXIFTOOL_VERSION=13.59
 RUN apk add --no-cache \
     perl \
     make \
@@ -33,24 +23,34 @@ RUN apk add --no-cache \
     tiff \
     libheif \
     imagemagick
-# Install ExifTool from source
-RUN wget https://exiftool.org/Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz && \
-    tar -xzf Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz && \
-    rm Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz && \
-    cd Image-ExifTool-${EXIFTOOL_VERSION} && \
+# Install ExifTool from source. The tarball comes from the git tag, not from
+# exiftool.org, which serves the current release only and 404s on every pin.
+RUN wget https://github.com/exiftool/exiftool/archive/refs/tags/${EXIFTOOL_VERSION}.tar.gz -O exiftool.tar.gz && \
+    tar -xzf exiftool.tar.gz && \
+    rm exiftool.tar.gz && \
+    cd exiftool-${EXIFTOOL_VERSION} && \
     perl Makefile.PL && \
     make install && \
     cd .. && \
-    rm -rf Image-ExifTool-${EXIFTOOL_VERSION}
-# Install Node dependencies
-COPY package.json package-lock.json ./
+    rm -rf exiftool-${EXIFTOOL_VERSION}
+# pnpm, at the version pinned by the root packageManager field
+RUN corepack enable pnpm
+# Workspace metadata only, so a source change does not reinstall dependencies.
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY packages/media-probe/package.json ./packages/media-probe/
+COPY packages/fs-indexer/package.json ./packages/fs-indexer/
+# The workspace layout is kept as pnpm creates it. Never `pnpm deploy`: it
+# copies workspace dependencies in as real directories, and node refuses to
+# strip types under node_modules.
 RUN apk add --no-cache --virtual .build-deps alpine-sdk python3 && \
-    npm install --production && \
+    pnpm install --frozen-lockfile --filter fs-indexer... --prod && \
     apk del .build-deps
-# Copy build files and binaries
-COPY --from=builder /app/dist ./dist/
-COPY --from=builder /app/bin ./bin/
+# Sources run as-is; node strips the types.
+COPY packages/media-probe/src ./packages/media-probe/src/
+COPY packages/fs-indexer/src ./packages/fs-indexer/src/
+COPY packages/fs-indexer/bin ./packages/fs-indexer/bin/
+COPY packages/fs-indexer/python ./packages/fs-indexer/python/
 COPY --from=ffmpeg-downloader /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
 COPY --from=ffmpeg-downloader /usr/local/bin/ffprobe /usr/local/bin/ffprobe
 
-ENTRYPOINT [ "/app/bin/run.js" ]
+ENTRYPOINT [ "node", "/app/packages/fs-indexer/bin/run.ts" ]
