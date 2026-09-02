@@ -34,7 +34,7 @@ export class FfmpegService {
 
       for (const line of subtitle) {
         const match = line.match(gpsPattern)
-        if (match) {
+        if (match?.[1] !== undefined && match[2] !== undefined) {
           const latitude = Number.parseFloat(match[1])
           const longitude = Number.parseFloat(match[2])
           return {
@@ -67,7 +67,7 @@ export class FfmpegService {
     //  [latitude: 50.64788] [longitude: 4.28388]
     for (const line of srtLines) {
       const match = line.match(gpsPattern)
-      if (match) {
+      if (match?.[1] !== undefined && match[2] !== undefined) {
         const latitude = Number.parseFloat(match[1])
         const longitude = Number.parseFloat(match[2])
         return {

@@ -15,9 +15,12 @@ function subtractOneHour(offset: string): string {
     throw new Error('Invalid time offset format')
   }
 
-  let [, sign, hoursStr, minutesStr] = match
-  let hours = parseInt(hoursStr, 10)
-  let minutes = parseInt(minutesStr, 10)
+  const [, sign, hoursStr, minutesStr] = match
+  if (hoursStr === undefined || minutesStr === undefined) {
+    throw new Error('Invalid time offset format')
+  }
+  const hours = parseInt(hoursStr, 10)
+  const minutes = parseInt(minutesStr, 10)
 
   // Convert total offset to minutes
   let totalMinutes = hours * 60 + minutes

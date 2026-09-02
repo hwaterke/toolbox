@@ -43,7 +43,6 @@
     "eslint-config-oclif": "^6",
     "eslint-config-oclif-typescript": "^3",
     "eslint-config-prettier": "^10",
-    "prettier": "^3",
-    "typescript": "^5"
+    "prettier": "^3"
   }
 }

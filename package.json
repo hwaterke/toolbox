@@ -8,5 +8,8 @@
     "lint": "pnpm -r run lint",
     "test": "pnpm -r run test",
     "format": "pnpm -r run format"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
   }
 }

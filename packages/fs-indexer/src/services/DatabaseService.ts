@@ -102,12 +102,13 @@ export class DatabaseService {
       })
 
     // If result is empty, the file already existed
-    if (result.length === 0) {
+    const created = result[0]
+    if (created === undefined) {
       return null
     }
 
     return {
-      ...result[0],
+      ...created,
       wasCreated: true,
     }
   }
@@ -281,11 +282,7 @@ export class DatabaseService {
         )
       )
 
-    if (results.length === 0) {
-      return 0
-    }
-
-    return results[0].count
+    return results[0]?.count ?? 0
   }
 
   async *findFilesWithMissingHashes({
@@ -504,10 +501,7 @@ export class DatabaseService {
       .select({totalSize: sum(indexedFileTable.size).mapWith(Number)})
       .from(indexedFileTable)
 
-    if (results.length === 0) {
-      return 0
-    }
-    return results[0].totalSize
+    return results[0]?.totalSize ?? 0
   }
 
   async countFiles(): Promise<number> {
@@ -515,10 +509,7 @@ export class DatabaseService {
       .select({count: count(indexedFileTable.id)})
       .from(indexedFileTable)
 
-    if (results.length === 0) {
-      return 0
-    }
-    return results[0].count
+    return results[0]?.count ?? 0
   }
 
   async countFilesInPath({path}: {path: string}): Promise<number> {
@@ -527,10 +518,7 @@ export class DatabaseService {
       .from(indexedFileTable)
       .where(like(indexedFileTable.path, `${path}%`))
 
-    if (results.length === 0) {
-      return 0
-    }
-    return results[0].count
+    return results[0]?.count ?? 0
   }
 
   async countHashes(algorithm?: HashingAlgorithmType): Promise<number> {
@@ -539,9 +527,6 @@ export class DatabaseService {
       .from(schema.hashTable)
       .where(algorithm ? eq(schema.hashTable.algorithm, algorithm) : undefined)
 
-    if (results.length === 0) {
-      return 0
-    }
-    return results[0].count
+    return results[0]?.count ?? 0
   }
 }

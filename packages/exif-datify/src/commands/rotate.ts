@@ -22,7 +22,11 @@ function getOrientation(currentOrientation: number, shift: number): number {
     throw new Error(`Unsupported EXIF orientation: ${currentOrientation}`)
   }
 
-  return cycle[(cycle.indexOf(currentOrientation) + shift) % 4]
+  const rotated = cycle[(cycle.indexOf(currentOrientation) + shift) % 4]
+  if (rotated === undefined) {
+    throw new Error(`Unsupported EXIF orientation: ${currentOrientation}`)
+  }
+  return rotated
 }
 
 /**

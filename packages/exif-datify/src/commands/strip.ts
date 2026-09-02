@@ -40,17 +40,14 @@ export default class StripCommand extends Command {
       flags,
     } = await this.parse(StripCommand)
 
+    // Stripping a prefix only reads dryRun; the rest of the config is inert here.
     const service = new DatifyService({
       dryRun: flags.dryRun,
       prefix: flags.prefix,
-      skipBasename: flags.skipBasename,
-      timeZone: flags.zone,
-      fileTimeFallback: flags.time,
-      srt: flags.srt,
-      livePhotoInfix:
-        flags.livePhotoInfix !== undefined && flags.livePhotoInfix !== ''
-          ? flags.livePhotoInfix
-          : null,
+      skipBasename: false,
+      fileTimeFallback: false,
+      srt: false,
+      livePhotoInfix: null,
     })
 
     await walkFiles({

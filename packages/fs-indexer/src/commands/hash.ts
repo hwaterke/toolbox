@@ -30,6 +30,9 @@ export default class Hash extends Command {
     debug: Flags.boolean({
       description: 'enable debug logging',
     }),
+    logFolder: Flags.string({
+      description: 'folder to save logs',
+    }),
     progress: Flags.boolean({
       description: 'show progress',
       default: false,

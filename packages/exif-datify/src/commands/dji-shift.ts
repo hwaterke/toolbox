@@ -20,9 +20,8 @@ function durationToSeconds(duration: string) {
   }
 
   const result = duration.match(/^(\d{1,2})\.(\d{2}) s$/)
-  if (result) {
-    const [seconds, milliseconds] = result.slice(1).map(Number)
-    return seconds + milliseconds / 1000
+  if (result?.[1] !== undefined && result[2] !== undefined) {
+    return Number(result[1]) + Number(result[2]) / 1000
   }
 
   throw new Error(`Invalid duration format ${duration}`)

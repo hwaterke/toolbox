@@ -85,7 +85,11 @@ class Xxhash extends HashingAlgorithm {
 
   async hash(path: string): Promise<string> {
     const {stdout} = await exec(`xxh128sum "${path}"`)
-    return stdout.split(/\s+/)[0].trim()
+    const hash = stdout.split(/\s+/)[0]?.trim()
+    if (!hash) {
+      throw new Error(`xxh128sum returned no hash for ${path}`)
+    }
+    return hash
   }
 
   async getToolVersion(): Promise<string> {
