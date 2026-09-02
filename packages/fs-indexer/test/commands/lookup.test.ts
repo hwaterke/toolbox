@@ -1,5 +1,5 @@
 import {runCommand} from '@oclif/test'
-import {expect} from 'chai'
+import {afterEach, beforeEach, describe, expect, it} from 'vitest'
 import * as fs from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import * as path from 'node:path'
@@ -22,8 +22,8 @@ describe('lookup command', () => {
   describe('help and flags', () => {
     it('shows help with originalPaths flag', async () => {
       const {stdout} = await runCommand(['lookup', '--help'])
-      expect(stdout).to.contain('--originalPaths')
-      expect(stdout).to.contain('comma-separated list of original paths')
+      expect(stdout).toContain('--originalPaths')
+      expect(stdout).toContain('comma-separated list of original paths')
     })
 
     it('accepts originalPaths flag', async () => {
@@ -36,7 +36,7 @@ describe('lookup command', () => {
         dbPath,
       ])
       // Should not crash and should show some output
-      expect(stderr).to.not.contain('Error')
+      expect(stderr).not.toContain('Error')
     })
   })
 })

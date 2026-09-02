@@ -83,6 +83,15 @@ export class LoggerService {
     }
   }
 
+  /**
+   * Drops the configured logger so a later configure() takes effect.
+   * configure() is a one-shot, which leaves every test in a file sharing the
+   * first test's log level.
+   */
+  public static reset() {
+    LoggerService.logger = null
+  }
+
   public static getLogger(): Logger {
     if (!LoggerService.logger) {
       throw new Error('LoggerService is not configured.')

@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "nodenext",
     "target": "esnext",
+    "types": ["node"],
     "moduleDetection": "force",
     "strict": true,
     "erasableSyntaxOnly": true,

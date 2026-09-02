@@ -1,10 +1,10 @@
 import {expect, test, describe} from 'vitest'
-import {ExiftoolService} from '../src/ExiftoolService.js'
+import {ExiftoolService} from '../src/ExiftoolService.ts'
 
 const getDateTime = async (filename: string, zone: string) => {
   const service = new ExiftoolService({})
   const metadata = await service.extractExifMetadata(
-    `tests/fixtures/${filename}`
+    `test/fixtures/${filename}`
   )
   return service.extractDateTimeFromExif({
     metadata,

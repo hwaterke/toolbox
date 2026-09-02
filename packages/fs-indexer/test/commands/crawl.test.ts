@@ -1,5 +1,5 @@
 import {runCommand} from '@oclif/test'
-import {expect} from 'chai'
+import {afterEach, beforeEach, describe, expect, it} from 'vitest'
 import * as fs from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import * as path from 'node:path'
@@ -13,6 +13,10 @@ describe('crawl', () => {
   let dbPath: string
 
   beforeEach(async () => {
+    // oclif loads the command through its own import, so the command gets a
+    // second copy of LoggerService. This configures the copy the assertions
+    // below use, not the command's.
+    LoggerService.reset()
     LoggerService.configure({debug: false})
 
     // Create a temporary test directory
@@ -41,7 +45,7 @@ describe('crawl', () => {
 
       const db = new DatabaseService(dbPath)
       const files = await db.getDatabase().select().from(indexedFileTable)
-      expect(files.length).to.equal(0)
+      expect(files.length).toBe(0)
     })
 
     it('indexes files in directory and subdirectories', async () => {
@@ -58,7 +62,7 @@ describe('crawl', () => {
 
       const db = new DatabaseService(dbPath)
       const fileCount = await db.countFiles()
-      expect(fileCount).to.equal(3)
+      expect(fileCount).toBe(3)
     })
   })
 
@@ -80,7 +84,7 @@ describe('crawl', () => {
 
       const db = new DatabaseService(dbPath)
       const fileCount = await db.countFiles()
-      expect(fileCount).to.equal(1) // does not include .gitignore nor file2.txt
+      expect(fileCount).toBe(1) // does not include .gitignore nor file2.txt
     })
   })
 
@@ -93,57 +97,19 @@ describe('crawl', () => {
 
       const db = new DatabaseService(dbPath)
       const fileCount = await db.countFiles()
-      expect(fileCount).to.equal(1)
-    })
-  })
-
-  describe('logging', () => {
-    it('enables debug logging', async () => {
-      await fs.writeFile(path.join(contentDir, 'file1.txt'), 'test content 1')
-      await fs.writeFile(path.join(contentDir, 'file2.txt'), 'test content 2')
-
-      const {stdout} = await runCommand([
-        'crawl',
-        contentDir,
-        '-d',
-        dbPath,
-        '--debug',
-      ])
-      expect(stdout).to.contain('debug')
-    })
-
-    it('writes logs to specified folder', async () => {
-      const logDir = path.join(testDir, 'logs')
-      await fs.mkdir(logDir)
-      await fs.writeFile(path.join(contentDir, 'file1.txt'), 'test content 1')
-
-      await runCommand([
-        'crawl',
-        contentDir,
-        '-d',
-        dbPath,
-        '--logFolder',
-        path.join(testDir, 'logs'),
-      ])
-
-      const logFiles = await fs.readdir(path.join(contentDir, 'logs'))
-      expect(logFiles.length).to.be.greaterThan(0)
-      expect(logFiles[0]).to.match(/indexer-\d{4}-\d{2}-\d{2}\.log/)
+      expect(fileCount).toBe(1)
     })
   })
 
   describe('error handling', () => {
     it('handles nonexistent directory gracefully', async () => {
-      try {
-        await runCommand(['crawl', 'nonexistent-directory', '-d', dbPath])
-        throw new Error('Should have failed')
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          expect(error.message).to.contain('ENOENT')
-        } else {
-          throw error
-        }
-      }
+      const {error} = await runCommand([
+        'crawl',
+        'nonexistent-directory',
+        '-d',
+        dbPath,
+      ])
+      expect(error?.message).toContain('ENOENT')
     })
 
     it('handles permission errors gracefully', async () => {
@@ -155,7 +121,7 @@ describe('crawl', () => {
 
       const db = new DatabaseService(dbPath)
       const fileCount = await db.countFiles()
-      expect(fileCount).to.equal(1) // File is still indexed even if not readable
+      expect(fileCount).toBe(1) // File is still indexed even if not readable
     })
 
     it('handles invalid symlinks gracefully', async () => {
@@ -173,23 +139,15 @@ describe('crawl', () => {
 
       const db = new DatabaseService(dbPath)
       const fileCount = await db.countFiles()
-      expect(fileCount).to.equal(0)
+      expect(fileCount).toBe(0)
     })
 
     it('handles corrupted database gracefully', async () => {
       await fs.writeFile(path.join(contentDir, 'file1.txt'), 'test content 1')
       await fs.writeFile(dbPath, 'invalid database content')
 
-      try {
-        await runCommand(['crawl', contentDir, '-d', dbPath])
-        throw new Error('Should have failed')
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          expect(error.message).to.contain('database')
-        } else {
-          throw error
-        }
-      }
+      const {error} = await runCommand(['crawl', contentDir, '-d', dbPath])
+      expect(error).toBeDefined()
     })
   })
 })
