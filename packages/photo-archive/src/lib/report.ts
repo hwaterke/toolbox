@@ -67,7 +67,7 @@ export function colorize(line: string): string {
   if (line.startsWith('Dry run')) {
     return chalk.yellow(line)
   }
-  if (line.endsWith('left in place:')) {
+  if (line.endsWith('left in place:') || line.endsWith('not restored:')) {
     return chalk.red(line)
   }
   return line
