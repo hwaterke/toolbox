@@ -1,0 +1,13 @@
+*-debug.log
+*-error.log
+/.nyc_output
+/dist
+/lib
+/tmp
+node_modules
+.idea
+.DS_Store
+test-files
+oclif.manifest.json
+/local
+tsconfig.tsbuildinfo

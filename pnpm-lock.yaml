@@ -120,6 +120,21 @@ importers:
         specifier: ^3
         version: 3.7.5
 
+  packages/photo-archive:
+    dependencies:
+      '@hwaterke/file-utils':
+        specifier: workspace:*
+        version: link:../file-utils
+      '@oclif/core':
+        specifier: ^4
+        version: 4.14.0
+      '@oclif/plugin-help':
+        specifier: ^6
+        version: 6.3.0
+      chalk:
+        specifier: ^5
+        version: 5.6.2
+
 packages:
 
   '@colors/colors@1.6.0':

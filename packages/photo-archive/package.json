@@ -1,0 +1,33 @@
+{
+  "name": "photo-archive",
+  "description": "CLI to file already-renamed media into the photo archive",
+  "version": "0.0.1",
+  "author": "Harold Waterkeyn",
+  "license": "MIT",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "bin": {
+    "photo-archive": "./bin/run.ts"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "oclif": {
+    "bin": "photo-archive",
+    "dirname": "photo-archive",
+    "commands": "./src/commands",
+    "plugins": [
+      "@oclif/plugin-help"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@hwaterke/file-utils": "workspace:*",
+    "@oclif/core": "^4",
+    "@oclif/plugin-help": "^6",
+    "chalk": "^5"
+  }
+}
