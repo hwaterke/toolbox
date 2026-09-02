@@ -2,7 +2,7 @@ import ignore from 'ignore'
 import type {Ignore} from 'ignore'
 import {lstat, opendir, readFile} from 'node:fs/promises'
 import * as nodePath from 'node:path'
-import {LoggerService} from './services/LoggerService.js'
+import {LoggerService} from './services/LoggerService.ts'
 
 type WalkCallback = (path: string) => Promise<{stop: boolean}>
 

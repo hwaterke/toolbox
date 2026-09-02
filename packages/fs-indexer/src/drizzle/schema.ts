@@ -8,7 +8,7 @@ import {
 } from 'drizzle-orm/sqlite-core'
 import {relations, sql} from 'drizzle-orm'
 import {createId} from '@paralleldrive/cuid2'
-import {HashingAlgorithmType} from '../services/HashingService.js'
+import {HashingAlgorithmType} from '../services/HashingService.ts'
 
 export const indexedFileTable = sqliteTable(
   'file',

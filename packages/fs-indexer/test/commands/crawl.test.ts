@@ -3,9 +3,9 @@ import {expect} from 'chai'
 import * as fs from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import * as path from 'node:path'
-import {indexedFileTable} from '../../src/drizzle/schema.js'
-import {DatabaseService} from '../../src/services/DatabaseService.js'
-import {LoggerService} from '../../src/services/LoggerService.js'
+import {indexedFileTable} from '../../src/drizzle/schema.ts'
+import {DatabaseService} from '../../src/services/DatabaseService.ts'
+import {LoggerService} from '../../src/services/LoggerService.ts'
 
 describe('crawl', () => {
   let testDir: string

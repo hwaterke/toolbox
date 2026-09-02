@@ -17,17 +17,17 @@ import {drizzle, LibSQLDatabase} from 'drizzle-orm/libsql'
 import {migrate} from 'drizzle-orm/libsql/migrator'
 import {dirname, resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
-import * as schema from '../drizzle/schema.js'
-import {indexedFileTable} from '../drizzle/schema.js'
+import * as schema from '../drizzle/schema.ts'
+import {indexedFileTable} from '../drizzle/schema.ts'
 import type {
   IndexedFile,
   IndexedFileWithHashes,
   InsertExif,
   InsertIndexedFile,
-} from '../drizzle/schema.js'
-import type {ExifMetadata} from '../utils.js'
-import {HashingAlgorithmByType, HashingAlgorithmType} from './HashingService.js'
-import {LoggerService} from './LoggerService.js'
+} from '../drizzle/schema.ts'
+import type {ExifMetadata} from '../utils.ts'
+import {HashingAlgorithmByType, HashingAlgorithmType} from './HashingService.ts'
+import {LoggerService} from './LoggerService.ts'
 
 export class DatabaseService {
   private readonly db: LibSQLDatabase<typeof schema>

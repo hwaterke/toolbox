@@ -1,8 +1,8 @@
 import {Args, Command, Flags} from '@oclif/core'
-import {IndexerService} from '../services/IndexerService.js'
-import {HashingAlgorithmType} from '../services/HashingService.js'
-import {getHashingAlgorithms, humanReadableSeconds} from '../utils.js'
-import {LoggerService} from '../services/LoggerService.js'
+import {IndexerService} from '../services/IndexerService.ts'
+import {HashingAlgorithmType} from '../services/HashingService.ts'
+import {getHashingAlgorithms, humanReadableSeconds} from '../utils.ts'
+import {LoggerService} from '../services/LoggerService.ts'
 
 export default class Verify extends Command {
   static description =

@@ -1,7 +1,7 @@
 import {promisify} from 'node:util'
 import {exec as callbackExec} from 'node:child_process'
 import {existsSync, readFileSync} from 'node:fs'
-import {LoggerService} from './LoggerService.js'
+import {LoggerService} from './LoggerService.ts'
 
 const exec = promisify(callbackExec)
 

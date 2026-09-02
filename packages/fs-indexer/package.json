@@ -6,36 +6,24 @@
   "homepage": "https://github.com/hwaterke/fs-indexer",
   "license": "MIT",
   "type": "module",
-  "exports": "./lib/index.js",
-  "types": "dist/index.d.ts",
+  "exports": "./src/index.ts",
   "bin": {
-    "fs-indexer": "./bin/run.js"
+    "fs-indexer": "./bin/run.ts"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24"
   },
-  "files": [
-    "./bin",
-    "./dist",
-    "./python",
-    "./oclif.manifest.json"
-  ],
   "oclif": {
     "bin": "fs-indexer",
     "dirname": "fs-indexer",
-    "commands": "./dist/commands",
+    "commands": "./src/commands",
     "plugins": [
       "@oclif/plugin-help"
     ]
   },
   "scripts": {
-    "build": "shx rm -rf dist && tsc -b",
-    "postbuild": "shx cp -r src/drizzle/migrations dist/drizzle",
     "lint": "eslint . --ext .ts",
-    "postpack": "shx rm -f oclif.manifest.json",
     "format": "prettier --write .",
-    "prepack": "npm run build && oclif manifest && oclif readme",
-    "version": "oclif readme && git add README.md",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:drop": "drizzle-kit drop",
@@ -43,7 +31,7 @@
     "test:watch": "mocha --require tsx --watch --watch-files src/,test/ 'test/**/*.test.ts'"
   },
   "dependencies": {
-    "@hwaterke/media-probe": "npm:@jsr/hwaterke__media-probe@^0.0.12",
+    "@hwaterke/media-probe": "workspace:*",
     "@libsql/client": "^0.15.10",
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
@@ -58,7 +46,6 @@
   "devDependencies": {
     "@eslint/compat": "^1.3.0",
     "@oclif/prettier-config": "^0.2.1",
-    "@oclif/test": "^4",
     "@types/chai": "^5",
     "@types/mocha": "^10",
     "@types/node": "^22",
@@ -69,12 +56,7 @@
     "eslint-config-oclif-typescript": "^3",
     "eslint-config-prettier": "^10",
     "mocha": "^10",
-    "oclif": "^4",
     "prettier": "^3",
-    "shx": "^0.4.0",
-    "ts-node": "^10.9.2",
-    "tslib": "^2.8.1",
-    "tsx": "^4.20.3",
     "typescript": "^5"
   }
 }

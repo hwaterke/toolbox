@@ -2,10 +2,10 @@ import {access, lstat} from 'node:fs/promises'
 import {constants} from 'node:fs'
 import * as nodePath from 'node:path'
 import {homedir} from 'node:os'
-import {HashingAlgorithmType} from './services/HashingService.js'
-import {FfmpegService} from './services/FfmpegService.js'
+import {HashingAlgorithmType} from './services/HashingService.ts'
+import {FfmpegService} from './services/FfmpegService.ts'
 import {EXIF_TAGS, ExiftoolService} from '@hwaterke/media-probe'
-import {LoggerService} from './services/LoggerService.js'
+import {LoggerService} from './services/LoggerService.ts'
 
 export const uniq = <T>(array: T[]): T[] => [...new Set(array)]
 

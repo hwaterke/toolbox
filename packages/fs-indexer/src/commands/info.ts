@@ -1,7 +1,7 @@
 import {Command, Flags} from '@oclif/core'
-import {IndexerService} from '../services/IndexerService.js'
-import {humanReadableSeconds} from '../utils.js'
-import {LoggerService} from '../services/LoggerService.js'
+import {IndexerService} from '../services/IndexerService.ts'
+import {humanReadableSeconds} from '../utils.ts'
+import {LoggerService} from '../services/LoggerService.ts'
 
 export default class Info extends Command {
   static description = 'prints information about the database'

@@ -1,7 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
-import {IndexerService} from '../services/IndexerService.js'
-import {humanReadableSeconds} from '../utils.js'
-import {LoggerService} from '../services/LoggerService.js'
+import {IndexerService} from '../services/IndexerService.ts'
+import {humanReadableSeconds} from '../utils.ts'
+import {LoggerService} from '../services/LoggerService.ts'
 
 export default class Lookup extends Command {
   static description = 'searches for files within the database'

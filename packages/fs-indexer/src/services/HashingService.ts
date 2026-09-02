@@ -3,7 +3,7 @@ import {existsSync} from 'node:fs'
 import {dirname, extname, join, resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {promisify} from 'node:util'
-import {LoggerService} from './LoggerService.js'
+import {LoggerService} from './LoggerService.ts'
 
 const exec = promisify(callbackExec)
 
