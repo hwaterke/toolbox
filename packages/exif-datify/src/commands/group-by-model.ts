@@ -1,11 +1,14 @@
 import {Args, Command, Flags} from '@oclif/core'
 import {EXIF_TAGS, ExiftoolService} from '@hwaterke/media-probe'
-import {moveFileSafely} from '../lib/utils.ts'
 import {Logger} from '../lib/Logger.ts'
 import nodePath from 'node:path'
 import chalk from 'chalk'
 import {sanitizeFilename} from '../lib/sanitizeFilename.ts'
-import {defaultProgressLogger, walkFiles} from '@hwaterke/file-utils'
+import {
+  defaultProgressLogger,
+  moveFileIntoFolder,
+  walkFiles,
+} from '@hwaterke/file-utils'
 
 export default class GroupByModel extends Command {
   static description =
@@ -73,10 +76,10 @@ export default class GroupByModel extends Command {
 
           // Move file to appropriate folder
           const fileName = nodePath.basename(file)
-          const destinationPath = await moveFileSafely(
+          const {destinationPath} = await moveFileIntoFolder(
             file,
             groupFolder,
-            flags.dryRun
+            {ifExists: 'suffix', dryRun: flags.dryRun}
           )
           this.log(`${fileName} -> ${destinationPath}`)
           totalProcessed++

@@ -1,5 +1,4 @@
 import {promises as FS, constants} from 'node:fs'
-import nodePath from 'node:path'
 import {ExiftoolService} from '@hwaterke/media-probe'
 import {DateTime} from 'luxon'
 
@@ -86,46 +85,4 @@ export const updateTime = async ({
   }
 
   throw new Error('Unsupported file type')
-}
-
-/**
- * Moves a file to a destination directory, ensuring no existing files are overwritten.
- * If a file with the same name exists, appends a counter suffix.
- * @param sourcePath - The source file path
- * @param destinationDir - The destination directory
- * @param dryRun - If true, doesn't actually move the file
- * @returns The final destination path
- */
-export const moveFileSafely = async (
-  sourcePath: string,
-  destinationDir: string,
-  dryRun: boolean
-): Promise<string> => {
-  await ensureFile(sourcePath)
-
-  // Ensure destination directory exists
-  await FS.mkdir(destinationDir, {recursive: true})
-
-  const {name: baseName, ext} = nodePath.parse(sourcePath)
-  let counter = 0
-
-  // Find a unique filename
-  while (true) {
-    const fileName = `${baseName}${counter > 0 ? `_${counter}` : ''}${ext}`
-    const destinationPath = nodePath.join(destinationDir, fileName)
-
-    try {
-      await FS.access(destinationPath, constants.F_OK)
-      // File exists, try next counter
-      counter += 1
-    } catch {
-      // File doesn't exist, we can use this path
-      if (!dryRun) {
-        // Use copy + delete instead of rename to support cross-volume moves
-        await FS.copyFile(sourcePath, destinationPath)
-        await FS.unlink(sourcePath)
-      }
-      return destinationPath
-    }
-  }
 }
