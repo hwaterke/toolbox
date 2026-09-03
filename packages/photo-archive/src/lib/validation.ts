@@ -15,16 +15,32 @@ export function isInsideBucket(p: string): boolean {
 
 /**
  * Event folder names are `YYYY-MM-DD-Name`, with a non-empty name that may
- * itself contain dashes (decision 15).
+ * itself contain dashes (decision 15), and a date that really exists. Feb 30
+ * and Nov 31 are rejected here, not just out-of-range fields (T5).
  */
 export function isValidEventName(name: string): boolean {
   const match = /^(\d{4})-(\d{2})-(\d{2})-(.+)$/.exec(name)
   if (match === null) {
     return false
   }
-  const month = Number(match[2]!)
-  const day = Number(match[3]!)
-  return month >= 1 && month <= 12 && day >= 1 && day <= 31
+  return isRealDate(Number(match[1]!), Number(match[2]!), Number(match[3]!))
+}
+
+/**
+ * True when year/month/day name a day that exists. Uses the same `Date.UTC`
+ * round-trip as `parseTimestampedName`: `Date.UTC` silently rolls Feb 30 over
+ * into March, so a date survives only if it comes back unchanged.
+ */
+export function isRealDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return false
+  }
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  )
 }
 
 /**

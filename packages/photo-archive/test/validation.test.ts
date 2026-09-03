@@ -2,6 +2,7 @@ import {describe, expect, test} from 'vitest'
 import {
   checkSourceLocation,
   isInsideBucket,
+  isRealDate,
   isValidEventName,
   isValidSourceSegment,
 } from '../src/lib/validation.ts'
@@ -47,6 +48,40 @@ describe('isValidEventName', () => {
     expect(isValidEventName('2025-00-10-Iceland')).toBe(false)
     expect(isValidEventName('2025-05-32-Iceland')).toBe(false)
     expect(isValidEventName('2025-05-00-Iceland')).toBe(false)
+  })
+
+  test('rejects a day that does not exist in that month (T5)', () => {
+    expect(isValidEventName('2025-02-30-Iceland')).toBe(false)
+    expect(isValidEventName('2025-11-31-Iceland')).toBe(false)
+    expect(isValidEventName('2025-02-29-Iceland')).toBe(false)
+  })
+
+  test('accepts February 29 in a leap year', () => {
+    expect(isValidEventName('2024-02-29-Iceland')).toBe(true)
+  })
+})
+
+describe('isRealDate', () => {
+  test('accepts an ordinary date', () => {
+    expect(isRealDate(2025, 5, 10)).toBe(true)
+  })
+
+  test('rejects a rolled-over date', () => {
+    expect(isRealDate(2025, 2, 30)).toBe(false)
+    expect(isRealDate(2025, 11, 31)).toBe(false)
+  })
+
+  test('knows which years are leap years', () => {
+    expect(isRealDate(2024, 2, 29)).toBe(true)
+    expect(isRealDate(2100, 2, 29)).toBe(false)
+    expect(isRealDate(2000, 2, 29)).toBe(true)
+  })
+
+  test('rejects out-of-range fields', () => {
+    expect(isRealDate(2025, 0, 10)).toBe(false)
+    expect(isRealDate(2025, 13, 10)).toBe(false)
+    expect(isRealDate(2025, 5, 0)).toBe(false)
+    expect(isRealDate(2025, 5, 32)).toBe(false)
   })
 })
 
