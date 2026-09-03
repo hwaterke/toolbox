@@ -54,7 +54,7 @@ folder instead, so Immich still indexes it: it is the only copy of that photo.
 
 Twins are looked for in the batch being ingested _and_ in the destination
 folder, so a RAW whose JPG was filed on an earlier run still gets bucketed. Two
-passes run, both ported from the original `photo-tools.ts`:
+passes run:
 
 1. exact stem match;
 2. trailing-token match, accepted only when it is unique and the two timestamps
