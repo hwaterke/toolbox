@@ -1,11 +1,12 @@
 # photo-archive
 
-CLI to file already-renamed media into the photo archive.
+CLI to file already-renamed media into the photo archive, and to check the
+archive against its layout rules.
 
-It takes a folder of media whose names already carry a `YYYY-MM-DD_HH-mm-ss_`
-prefix — written earlier by [`exif-datify rename`](../exif-datify) — and moves
-each file to the right place in the archive. It never reads Exif: the date comes
-from the filename alone.
+`ingest` takes a folder of media whose names already carry a
+`YYYY-MM-DD_HH-mm-ss_` prefix — written earlier by
+[`exif-datify rename`](../exif-datify) — and moves each file to the right place
+in the archive. It never reads Exif: the date comes from the filename alone.
 
 # Installation
 
@@ -21,7 +22,10 @@ $ ln -s "$PWD/bin/run.ts" ~/.local/bin/photo-archive
 ```sh-session
 $ photo-archive ingest <source> <archive-root> [--event NAME] [--source NAME] [--execute]
 $ photo-archive undo <manifest.jsonl> [--execute]
+$ photo-archive lint <archive-root> [--only PATH]... [--rule ID]... [--strict] [--format json]
 ```
+
+`ingest` and `undo` move files; `lint` only reads. It has its own section below.
 
 **Dry run is the default.** Nothing moves until you pass `--execute`. The dry
 run walks the same code path as a real run — it stats every file, checks every
@@ -77,9 +81,10 @@ place. Nothing is guessed.
 - **`footage/` keeps one layout.** Loose media means flat, sub-folders mean
   grouped, and mixing the two stops the run. So does asking for the wrong one:
   `--source` against a flat folder, or no `--source` against a grouped one.
-- **Only known media moves.** `jpg jpeg heic png mov mp4 nef dng srt`.
-  Everything else — including `.aae`, `.xmp` and Takeout `.json` sidecars — is
-  reported and left where it is.
+- **Only known media moves.**
+  `jpg jpeg heic nef dng png tif mov mp4 m4v mpg mts avi wmv flv 3gp srt`.
+  Everything else — including `.thm`, `.aae`, `.xmp` and Takeout `.json`
+  sidecars — is reported and left where it is.
 - **Every real move is recorded**, one fsync'd JSON line at a time, so an
   interrupted run still has a complete record of what it did.
 
@@ -124,6 +129,126 @@ file is untouched in every case.
 | 2    | Pre-flight refused the run. No file was looked at, let alone moved. |
 
 `undo` uses 0 and 1 the same way: 1 when anything could not be put back.
+`lint`'s codes are in its own section below.
+
+# Lint
+
+```sh-session
+$ photo-archive lint /Volumes/photos-archive
+$ photo-archive lint /Volumes/photos-archive --only /Volumes/photos-archive/events/2022-09-08-Sicily --rule bucket-not-mirrored
+```
+
+`lint` checks the archive against the layout rules below and reports every place
+it disagrees. **It never writes.** There is no `--fix` and there will not be
+one: moving files is `ingest`'s job, because `ingest` writes a manifest that
+`undo` can replay. `lint` opens folders and reads names, nothing more.
+
+## What it walks
+
+Three top-level folders — `events/`, `sorted/` and `relations/`. Every other
+top-level entry is skipped and listed as an `info` line, so a typo'd folder is
+still visible without anything being hardcoded. Each `relations/<person>/` is
+walked with the same rules as the archive root: it holds its own `events/` and
+`sorted/`.
+
+Ignoring comes from the archive's own `fs-ignore` file at the root — that is
+where `.DS_Store` and `@eaDir` live, not in the code. Dotfiles are skipped
+everywhere. A `panorama` folder is listed but never descended into: its sets
+nest one level deeper than anything else and carry no date prefix.
+
+The walk materialises **one scope at a time** — one event's `footage/`, one
+`sorted/YYYY/MM`, one person folder — judges it, and drops it before reading the
+next. Peak memory is the largest single event, not the archive. The walk is
+sequential, so a full run over SMB takes about a quarter of an hour (233,000
+files in 819 scopes measured at 13 minutes); `--only` and `--rule` are what make
+iterating bearable.
+
+## Flags
+
+| Flag                 | Meaning                                                                                                                                      |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--only PATH`        | Judge only the scopes under `PATH`. Repeatable. Only the folders on the way to it are read.                                                  |
+| `--rule ID`          | Run only this rule. Repeatable. An unknown id refuses the run.                                                                               |
+| `--strict`           | Warnings fail the run too.                                                                                                                   |
+| `--verbose`          | List every finding. The default is a sample of 10 per rule, plus a count of the rest.                                                        |
+| `--format json`      | Print the whole run as one JSON object instead of the text report. Progress lines are suppressed, so stdout carries nothing but JSON.        |
+| `--max-days-early N` | How many days before its event a media file may be dated before `media-before-event` fires. Default 1, which covers the evening-before shot. |
+
+## Severities
+
+- `error` — the structure is wrong. Fails the run.
+- `warning` — style, or a backlog to work through. Fails the run only under
+  `--strict`.
+- `info` — something was skipped, reported so it stays visible. Never fails the
+  run.
+
+## Rules
+
+IDs are stable: `--rule` names them, and the report groups by them. They are
+listed in report order.
+
+| ID                      | Rule                                                                     | Severity |
+| ----------------------- | ------------------------------------------------------------------------ | -------- |
+| `root-file`             | Visible file at the archive root (`fs-ignore` is reserved)               | error    |
+| `root-unknown-folder`   | Top-level folder that is not `events`, `sorted` or `relations`           | info     |
+| `person-folder-empty`   | Person folder with nothing in it                                         | error    |
+| `person-folder-media`   | Media file directly in a person folder                                   | error    |
+| `person-folder-unknown` | Person folder entry that is not `events` or `sorted`                     | info     |
+| `event-name-format`     | Event name is not `YYYY-MM-DD-Name`                                      | error    |
+| `event-name-date`       | Event date is not a real calendar date                                   | error    |
+| `event-name-case`       | `Name` part is not PascalCase                                            | warning  |
+| `event-unknown-entry`   | Entry in an event other than `footage`, `assets`, `exports`, `README.md` | error    |
+| `event-footage-missing` | Event has no `footage/`                                                  | warning  |
+| `media-before-event`    | Media dated more than `--max-days-early` before its event                | warning  |
+| `footage-layout-mixed`  | `footage/` mixes loose media and source folders                          | error    |
+| `source-folder-case`    | Source folder is not kebab-case                                          | warning  |
+| `source-folder-nesting` | A folder inside a source folder (`panorama` exempt)                      | warning  |
+| `missing-date-prefix`   | Media in `footage/` with no `YYYY-MM-DD_HH-mm-ss_` prefix                | warning  |
+| `unrecognised-file`     | File in `footage/` of an unknown type                                    | warning  |
+| `sidecar-file`          | `.thm` / `.xmp` / `.aae` clutter in `footage/`                           | warning  |
+| `bucket-not-mirrored`   | RAW in `raw_versions/` not filed under its twin's folder                 | error    |
+| `bucket-orphan-folder`  | `raw_versions/` sub-folder with no matching source folder                | error    |
+| `bucket-non-raw`        | A non-RAW file inside `raw_versions/`                                    | error    |
+| `raw-orphan`            | RAW in `raw_versions/` with no viewable twin anywhere in scope           | error    |
+| `raw-loose-pair`        | RAW outside `raw_versions/` that has a viewable twin                     | warning  |
+| `raw-ambiguous-pair`    | RAW with more than one pass-2 candidate                                  | warning  |
+| `sorted-year-folder`    | `sorted/` entry that is not a four-digit year                            | error    |
+| `sorted-month-folder`   | Year-folder entry that is not a month `01`–`12`                          | error    |
+| `sorted-year-file`      | File directly in a year folder                                           | error    |
+| `sorted-month-entry`    | Folder in a month other than `raw_versions`                              | error    |
+| `sorted-bucket-nesting` | Sub-folder inside a `sorted` `raw_versions/`                             | error    |
+
+The `bucket-*` and `raw-*` rules judge a `sorted/YYYY/MM` as well as an event's
+`footage/`, with one exception: `bucket-orphan-folder` is events-only, because
+`sorted/` has no source folders to mirror — a sub-folder in its bucket is
+`sorted-bucket-nesting`, reported once. The `footage-*`, `source-folder-*`,
+`missing-date-prefix`, `unrecognised-file` and `sidecar-file` rules judge an
+event's `footage/` and nothing else.
+
+Pairing uses the same two passes as `ingest` — exact stem, then trailing token
+within 5 seconds — but looks anywhere in the scope's tree, not just in the
+mirror folder. `bucket-not-mirrored`'s detail names the folder the RAW belongs
+in.
+
+## Output
+
+The text report opens with the file and scope count and the wall time, then
+lists findings by severity, then by rule in the order above, each rule with its
+count and a sample of paths. Two runs over the same archive read the same.
+
+`--format json` prints one object: `archiveRoot`, `files`, `scopes`,
+`durationMs`, `strict`, `exitCode`, and `findings` — every finding, not a
+sample, each as `{ruleId, severity, scope, path, detail?}`. `scope` is a label
+such as `events/2022-09-08-Sicily` or `relations/aline/sorted/2015`; `path` is
+absolute.
+
+## Exit codes
+
+| Code | Meaning                                                                                                                      |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 0    | Clean, or warnings only without `--strict`.                                                                                  |
+| 1    | At least one error — or one warning under `--strict`.                                                                        |
+| 2    | Pre-flight refused: the root holds neither `events/` nor `sorted/`, `--rule` is unknown, or `--only` is outside the archive. |
 
 # Development
 
@@ -132,7 +257,9 @@ $ pnpm --filter photo-archive test
 $ pnpm --filter photo-archive typecheck
 ```
 
-The pure core — name parsing, pairing, destination layout, validation — is unit
-tested; `ingest` and `undo` are tested end to end against a temporary archive,
-including the round trip that ingests a tree and undoes it back to
-byte-identical.
+The pure core — name parsing, pairing, destination layout, validation, and every
+lint rule over scope literals — is unit tested. `ingest` and `undo` are tested
+end to end against a temporary archive, including the round trip that ingests a
+tree and undoes it back to byte-identical. `lint` is tested end to end through
+the real `bin/run.ts`, against a temporary archive seeded with one violation per
+rule, asserting the JSON it prints.
