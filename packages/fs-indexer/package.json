@@ -28,6 +28,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hwaterke/file-utils": "workspace:*",
     "@hwaterke/media-probe": "workspace:*",
     "@libsql/client": "^0.15.10",
     "@oclif/core": "^4",

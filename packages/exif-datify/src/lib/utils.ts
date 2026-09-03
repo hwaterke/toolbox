@@ -1,4 +1,5 @@
 import {promises as FS, constants} from 'node:fs'
+import {isDirectory} from '@hwaterke/file-utils'
 import {ExiftoolService} from '@hwaterke/media-probe'
 import {DateTime} from 'luxon'
 
@@ -8,14 +9,6 @@ export const EXIF_DATE_TIME_SUBSEC_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ss.uuZZ'
 export const EXIF_OFFSET_FORMAT = 'ZZ'
 
 /**
- * Returns true if the provided path is a directory
- */
-export const isDirectory = async (path: string) => {
-  const stat = await FS.lstat(path)
-  return stat.isDirectory()
-}
-
-/**
  * Makes sure the provided path is a valid directory
  */
 export const ensureDirectory = async (path: string): Promise<void> => {
@@ -23,16 +16,6 @@ export const ensureDirectory = async (path: string): Promise<void> => {
     throw new Error(`${path} is not a directory`)
   }
   await FS.access(path, constants.R_OK)
-}
-
-/**
- * Makes sure the provided path is a valid file
- */
-export const ensureFile = async (path: string): Promise<void> => {
-  if (await isDirectory(path)) {
-    throw new Error(`${path} is a directory and not a file`)
-  }
-  await FS.access(path, constants.F_OK)
 }
 
 export const updateTime = async ({

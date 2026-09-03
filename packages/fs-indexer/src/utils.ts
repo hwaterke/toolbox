@@ -1,5 +1,3 @@
-import {access, lstat} from 'node:fs/promises'
-import {constants} from 'node:fs'
 import * as nodePath from 'node:path'
 import {homedir} from 'node:os'
 import {HashingAlgorithmType} from './services/HashingService.ts'
@@ -38,24 +36,6 @@ export const expandPath = (path: string): string => {
   }
 
   return nodePath.resolve(path)
-}
-
-/**
- * Returns true if the provided path is a directory
- */
-export const isDirectory = async (path: string): Promise<boolean> => {
-  const stat = await lstat(path)
-  return stat.isDirectory()
-}
-
-/**
- * Makes sure the provided path is a valid file
- */
-export const ensureFile = async (path: string): Promise<void> => {
-  if (await isDirectory(path)) {
-    throw new Error(`${path} is a directory and not a file`)
-  }
-  await access(path, constants.F_OK)
 }
 
 const EXIF_IMAGE_MAKE = 'EXIF:IFD0:Make'

@@ -1,7 +1,7 @@
 import {EXIF_TAGS, ExiftoolService} from '@hwaterke/media-probe'
 import {Args, Command, Flags} from '@oclif/core'
 import {Logger} from '../lib/Logger.ts'
-import {ensureFile} from '../lib/utils.ts'
+import {ensureFile} from '@hwaterke/file-utils'
 
 /**
  * Maps an EXIF orientation (1-8) to the value it becomes after rotating the

@@ -69,6 +69,9 @@ importers:
 
   packages/fs-indexer:
     dependencies:
+      '@hwaterke/file-utils':
+        specifier: workspace:*
+        version: link:../file-utils
       '@hwaterke/media-probe':
         specifier: workspace:*
         version: link:../media-probe
@@ -112,6 +115,9 @@ importers:
 
   packages/media-probe:
     dependencies:
+      '@hwaterke/file-utils':
+        specifier: workspace:*
+        version: link:../file-utils
       luxon:
         specifier: ^3.7.2
         version: 3.7.2

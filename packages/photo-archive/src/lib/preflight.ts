@@ -1,5 +1,6 @@
 import {promises as fs} from 'node:fs'
 import nodePath from 'node:path'
+import {isDirectory} from '@hwaterke/file-utils'
 import {BUCKET, MEDIA_EXT_SET} from './constants.ts'
 import {splitStem} from './names.ts'
 import {
@@ -33,14 +34,6 @@ export type PreflightFailure = {ok: false; error: string}
 export type PreflightResult = PreflightOk | PreflightFailure
 
 const fail = (error: string): PreflightFailure => ({ok: false, error})
-
-async function isDirectory(p: string): Promise<boolean> {
-  try {
-    return (await fs.stat(p)).isDirectory()
-  } catch {
-    return false
-  }
-}
 
 /** Levenshtein distance, used only to suggest a near-miss event folder. */
 export function editDistance(a: string, b: string): number {

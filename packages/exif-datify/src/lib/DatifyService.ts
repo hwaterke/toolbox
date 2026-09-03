@@ -1,4 +1,4 @@
-import {ensureFile} from './utils.ts'
+import {ensureFile} from '@hwaterke/file-utils'
 import {DateTime} from 'luxon'
 import * as nodePath from 'node:path'
 import chalk from 'chalk'

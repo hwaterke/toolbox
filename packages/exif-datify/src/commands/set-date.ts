@@ -1,6 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 import {ExiftoolService} from '@hwaterke/media-probe'
-import {ensureFile, updateTime} from '../lib/utils.ts'
+import {ensureFile} from '@hwaterke/file-utils'
+import {updateTime} from '../lib/utils.ts'
 import nodePath from 'node:path'
 import {DateTime} from 'luxon'
 import {Logger} from '../lib/Logger.ts'

@@ -1,7 +1,7 @@
 import {exec as callbackExec} from 'node:child_process'
 import {promisify} from 'node:util'
+import {ensureFile} from '@hwaterke/file-utils'
 import {
-  ensureFileOrThrow,
   EXIF_DATE_TIME_FORMAT,
   EXIF_DATE_TIME_FORMAT_WITH_TZ,
   EXIF_DATE_TIME_REGEX,
@@ -380,7 +380,7 @@ export class ExiftoolService {
       dryRun: boolean
     }
   }): Promise<string> {
-    await ensureFileOrThrow(path)
+    await ensureFile(path)
 
     return await this.rawExiftool({
       command: [

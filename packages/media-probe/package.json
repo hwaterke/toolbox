@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hwaterke/file-utils": "workspace:*",
     "luxon": "^3.7.2"
   },
   "devDependencies": {
