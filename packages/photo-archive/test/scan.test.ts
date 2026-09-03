@@ -1,4 +1,5 @@
 import {afterEach, beforeEach, describe, expect, test} from 'vitest'
+import {MEDIA_EXTS} from '../src/lib/constants.ts'
 import {scanSource} from '../src/lib/scan.ts'
 import {makeTempTree, type TempTree} from './utils/tempArchive.ts'
 
@@ -26,22 +27,21 @@ describe('scanSource', () => {
     expect(result.rejected).toEqual([])
   })
 
-  test('accepts every extension from decision 10', async () => {
-    for (const ext of [
-      'jpg',
-      'jpeg',
-      'heic',
-      'png',
-      'mov',
-      'mp4',
-      'nef',
-      'dng',
-      'srt',
-    ]) {
+  test('accepts every media extension', async () => {
+    for (const ext of MEDIA_EXTS) {
       await tree.file(`src/2025-05-10_10-00-00_A.${ext}`)
     }
     const result = await scanSource(tree.path('src'))
-    expect(result.files).toHaveLength(9)
+    expect(result.files).toHaveLength(MEDIA_EXTS.length)
+    expect(result.rejected).toEqual([])
+  })
+
+  test('accepts the legacy camcorder formats', async () => {
+    for (const ext of ['mpg', 'mts', 'avi']) {
+      await tree.file(`src/2025-05-10_10-00-00_A.${ext}`)
+    }
+    const result = await scanSource(tree.path('src'))
+    expect(result.files).toHaveLength(3)
     expect(result.rejected).toEqual([])
   })
 

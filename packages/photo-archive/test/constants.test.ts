@@ -9,12 +9,32 @@ import {
   RAW_EXTS,
   RAW_EXT_SET,
   RESERVED_FOLDERS,
+  SIDECAR_EXTS,
+  SIDECAR_EXT_SET,
 } from '../src/lib/constants.ts'
 
 describe('MEDIA_EXTS', () => {
   test('is exactly the list from decision 10', () => {
     expect([...MEDIA_EXTS].sort()).toEqual(
-      ['jpg', 'jpeg', 'heic', 'png', 'mov', 'mp4', 'nef', 'dng', 'srt'].sort()
+      [
+        'jpg',
+        'jpeg',
+        'heic',
+        'png',
+        'tif',
+        'mov',
+        'mp4',
+        'm4v',
+        'mpg',
+        'mts',
+        'avi',
+        'wmv',
+        'flv',
+        '3gp',
+        'nef',
+        'dng',
+        'srt',
+      ].sort()
     )
   })
 
@@ -31,6 +51,12 @@ describe('MEDIA_EXTS', () => {
   test('excludes the sidecars decision 10 leaves behind', () => {
     for (const ext of ['aae', 'xmp', 'json', 'thm', 'lrf']) {
       expect(MEDIA_EXT_SET.has(ext)).toBe(false)
+    }
+  })
+
+  test('covers the legacy camcorder formats', () => {
+    for (const ext of ['mpg', 'mts', 'avi']) {
+      expect(MEDIA_EXT_SET.has(ext)).toBe(true)
     }
   })
 
@@ -57,6 +83,19 @@ describe('RAW and photo extensions', () => {
 
 test('BUCKET is the raw_versions folder name', () => {
   expect(BUCKET).toBe('raw_versions')
+})
+
+describe('SIDECAR_EXTS', () => {
+  test('holds the expected values', () => {
+    expect([...SIDECAR_EXTS]).toEqual(['thm', 'xmp', 'aae'])
+  })
+
+  test('shares nothing with the media extensions', () => {
+    for (const ext of SIDECAR_EXTS) {
+      expect(MEDIA_EXT_SET.has(ext)).toBe(false)
+    }
+    expect(SIDECAR_EXT_SET.size).toBe(SIDECAR_EXTS.length)
+  })
 })
 
 test('PANORAMA is the lowercase panorama folder name', () => {

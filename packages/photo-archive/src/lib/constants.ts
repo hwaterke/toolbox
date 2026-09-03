@@ -9,10 +9,24 @@ export const MEDIA_EXTS = [
   ...PHOTO_EXTS,
   ...RAW_EXTS,
   'png',
+  'tif',
   'mov',
   'mp4',
+  'm4v',
+  'mpg',
+  'mts',
+  'avi',
+  'wmv',
+  'flv',
+  '3gp',
   'srt',
 ] as const
+
+/**
+ * Clutter left beside media by cameras and photo apps. Never moved by `ingest`;
+ * `lint` reports it as a backlog to delete.
+ */
+export const SIDECAR_EXTS = ['thm', 'xmp', 'aae'] as const
 
 /** The excluded sibling folder paired RAWs are moved into. */
 export const BUCKET = 'raw_versions'
@@ -34,3 +48,4 @@ export const PAIR_WINDOW_SECONDS = 5
 export const RAW_EXT_SET: ReadonlySet<string> = new Set(RAW_EXTS)
 export const PHOTO_EXT_SET: ReadonlySet<string> = new Set(PHOTO_EXTS)
 export const MEDIA_EXT_SET: ReadonlySet<string> = new Set(MEDIA_EXTS)
+export const SIDECAR_EXT_SET: ReadonlySet<string> = new Set(SIDECAR_EXTS)
