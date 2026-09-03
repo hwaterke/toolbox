@@ -1,6 +1,6 @@
 import {promises as fs} from 'node:fs'
 import nodePath from 'node:path'
-import {isDirectory, splitStem} from '@hwaterke/file-utils'
+import {closestMatch, isDirectory, splitStem} from '@hwaterke/file-utils'
 import {BUCKET, MEDIA_EXT_SET} from './constants.ts'
 import {
   checkSourceLocation,
@@ -33,45 +33,6 @@ export type PreflightFailure = {ok: false; error: string}
 export type PreflightResult = PreflightOk | PreflightFailure
 
 const fail = (error: string): PreflightFailure => ({ok: false, error})
-
-/** Levenshtein distance, used only to suggest a near-miss event folder. */
-export function editDistance(a: string, b: string): number {
-  let previous = Array.from({length: b.length + 1}, (_, i) => i)
-  for (let i = 1; i <= a.length; i++) {
-    const current = [i]
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1
-      current.push(
-        Math.min(current[j - 1]! + 1, previous[j]! + 1, previous[j - 1]! + cost)
-      )
-    }
-    previous = current
-  }
-  return previous[b.length]!
-}
-
-/**
- * The closest existing event folder to `wanted`, or null when nothing is near
- * enough to be worth printing.
- */
-export function suggestEvent(
-  wanted: string,
-  existing: readonly string[]
-): string | null {
-  let best: string | null = null
-  let bestDistance = Infinity
-  for (const candidate of existing) {
-    const distance = editDistance(wanted.toLowerCase(), candidate.toLowerCase())
-    if (distance < bestDistance) {
-      bestDistance = distance
-      best = candidate
-    }
-  }
-  // Allow roughly a third of the name to differ before giving up.
-  return best !== null && bestDistance <= Math.max(3, wanted.length / 3)
-    ? best
-    : null
-}
 
 export type FootageLayout = 'empty' | 'flat' | 'grouped' | 'mixed'
 
@@ -193,7 +154,7 @@ export async function preflight(
       const existing = (await fs.readdir(eventsRoot, {withFileTypes: true}))
         .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
         .map((entry) => entry.name)
-      const suggestion = suggestEvent(input.event, existing)
+      const suggestion = closestMatch(input.event, existing)
       return fail(
         `Event folder does not exist: ${eventPath}` +
           (suggestion === null

@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, test} from 'vitest'
-import {classifyFootage, preflight, suggestEvent} from '../src/lib/preflight.ts'
+import {classifyFootage, preflight} from '../src/lib/preflight.ts'
 import {makeTempTree, type TempTree} from './utils/tempArchive.ts'
 
 let tree: TempTree
@@ -232,27 +232,5 @@ describe('classifyFootage', () => {
 
   test('both together is mixed', () => {
     expect(classifyFootage([entry('a.JPG'), entry('dji', true)])).toBe('mixed')
-  })
-})
-
-describe('suggestEvent', () => {
-  test('finds a one-character typo', () => {
-    expect(suggestEvent('2025-05-10-Icelnd', ['2025-05-10-Iceland'])).toBe(
-      '2025-05-10-Iceland'
-    )
-  })
-
-  test('ignores case', () => {
-    expect(suggestEvent('2025-05-10-iceland', ['2025-05-10-Iceland'])).toBe(
-      '2025-05-10-Iceland'
-    )
-  })
-
-  test('returns null when nothing is close', () => {
-    expect(suggestEvent('2025-05-10-Iceland', ['1999-01-01-Xyz'])).toBeNull()
-  })
-
-  test('returns null for an empty archive', () => {
-    expect(suggestEvent('2025-05-10-Iceland', [])).toBeNull()
   })
 })
