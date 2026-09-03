@@ -37,7 +37,7 @@ const seed = async (): Promise<void> => {
   await tree.file('sorted/2025/05/2025-05-01_09-00-00_C.JPG')
 }
 
-const idsOf = (findings: {ruleId: string}[]): string[] =>
+const idsOf = (findings: readonly {ruleId: string}[]): string[] =>
   [...new Set(findings.map((finding) => finding.ruleId))].sort()
 
 describe('lintArchive', () => {

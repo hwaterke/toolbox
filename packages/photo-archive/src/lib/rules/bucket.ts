@@ -80,6 +80,14 @@ function overTree(check: (tree: MediaTree) => RuleReport[]): Rule['check'] {
   }
 }
 
+/** Judge an event's `footage/` alone. */
+function overEventTree(
+  check: (tree: MediaTree) => RuleReport[]
+): Rule['check'] {
+  return (scope: Scope) =>
+    scope.kind === 'event' && scope.footage !== null ? check(scope.footage) : []
+}
+
 /**
  * The bucket mirrors the source folders: a RAW whose twin sits in `dji/`
  * belongs in `raw_versions/dji/`. The twin's folder is what decides this, which
@@ -106,12 +114,17 @@ export const bucketNotMirrored: Rule = {
   }),
 }
 
-/** A mirror folder for a source folder that is not there any more. */
+/**
+ * A mirror folder for a source folder that is not there any more. Events only:
+ * `sorted/` has no source folders to mirror, so a sub-folder in its bucket is
+ * `sorted-bucket-nesting`, and reporting it here as well would say the same
+ * thing twice.
+ */
 export const bucketOrphanFolder: Rule = {
   id: 'bucket-orphan-folder',
   severity: 'error',
   title: 'raw_versions/ sub-folder with no matching source folder',
-  check: overTree((tree) => {
+  check: overEventTree((tree) => {
     const sources = new Set(
       tree.folders
         .filter(

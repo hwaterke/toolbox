@@ -116,6 +116,32 @@ export function exitCode(report: LintReport): number {
     : 0
 }
 
+export type LintJson = {
+  archiveRoot: string
+  files: number
+  scopes: number
+  durationMs: number
+  strict: boolean
+  exitCode: number
+  findings: readonly Finding[]
+}
+
+/**
+ * The whole run as one object, for a script to act on. Every finding is
+ * included: the sample cap is a courtesy to a human reader, not a filter.
+ */
+export function toJson(report: LintReport): LintJson {
+  return {
+    archiveRoot: report.archiveRoot,
+    files: report.files,
+    scopes: report.scopes,
+    durationMs: report.durationMs,
+    strict: report.strict,
+    exitCode: exitCode(report),
+    findings: report.findings,
+  }
+}
+
 export function colorize(line: string): string {
   if (/^\d+ error\(s\):$/.test(line)) {
     return chalk.red(line)

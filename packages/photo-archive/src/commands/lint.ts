@@ -1,7 +1,12 @@
 import {Args, Command, Flags} from '@oclif/core'
 import {DEFAULT_MAX_DAYS_EARLY} from '../lib/constants.ts'
 import {lintArchive} from '../lib/lint.ts'
-import {colorize, exitCode, formatLintReport} from '../lib/lintReport.ts'
+import {
+  colorize,
+  exitCode,
+  formatLintReport,
+  toJson,
+} from '../lib/lintReport.ts'
 import {PreflightError} from '../lib/preflight.ts'
 
 export default class Lint extends Command {
@@ -58,8 +63,12 @@ export default class Lint extends Command {
         onProgress: json ? undefined : (message) => this.log(message),
       })
 
-      for (const line of formatLintReport(report)) {
-        this.log(colorize(line))
+      if (json) {
+        this.log(JSON.stringify(toJson(report), null, 2))
+      } else {
+        for (const line of formatLintReport(report)) {
+          this.log(colorize(line))
+        }
       }
 
       const code = exitCode(report)

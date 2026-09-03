@@ -9,6 +9,7 @@ import type {
 import {
   bucketNonRaw,
   bucketNotMirrored,
+  bucketOrphanFolder,
   rawOrphan,
 } from '../src/lib/rules/bucket.ts'
 import {
@@ -183,6 +184,15 @@ describe('the bucket and pairing rules over a month', () => {
     expect(paths(rawOrphan, scope)).toStrictEqual([
       `${MONTH}/raw_versions/${DNG}`,
     ])
+  })
+
+  test('a nested sorted bucket is reported once, as nesting', () => {
+    const scope = month(['raw_versions/', 'raw_versions/dji/'])
+
+    expect(paths(sortedBucketNesting, scope)).toStrictEqual([
+      `${MONTH}/raw_versions/dji`,
+    ])
+    expect(paths(bucketOrphanFolder, scope)).toStrictEqual([])
   })
 
   test('a flat month mirrors the bucket root, so nothing is not-mirrored', () => {
