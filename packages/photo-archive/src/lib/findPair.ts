@@ -2,10 +2,17 @@ import {splitStem} from '@hwaterke/file-utils'
 import {PAIR_WINDOW_SECONDS, PHOTO_EXT_SET} from './constants.ts'
 import {parseTimestampedName} from './names.ts'
 
+/**
+ * A file a RAW might pair with: its filename, and the full path it was found
+ * at. Both are needed — the name is what pairing compares, the path is how a
+ * caller learns which folder the twin lives in (T2).
+ */
+export type PairCandidate = {name: string; path: string}
+
 export type FindPairResult =
-  | {method: 'exact'; photo: string}
-  | {method: 'pass2'; photo: string}
-  | {method: 'ambiguous'; candidates: string[]}
+  | {method: 'exact'; photo: PairCandidate}
+  | {method: 'pass2'; photo: PairCandidate}
+  | {method: 'ambiguous'; candidates: PairCandidate[]}
   | null
 
 /**
@@ -21,20 +28,22 @@ export type FindPairResult =
  *                     candidate -> pair; zero -> no pair; two or more ->
  *                     ambiguous (never guess).
  *
- * `siblings` is a listing of filenames. The RAW itself may be present and is
- * harmless: it is never a viewable photo.
+ * `candidates` is the set of files that could be the twin, each with the path
+ * it was found at. Matching only ever reads `name` — never the path, which may
+ * contain dots of its own (T2). The RAW itself may be present and is harmless:
+ * it is never a viewable photo.
  */
 export function findPair(
   rawFile: string,
-  siblings: readonly string[]
+  candidates: readonly PairCandidate[]
 ): FindPairResult {
   const raw = splitStem(rawFile)
 
   // Pass 1: exact-stem viewable photo.
-  for (const name of siblings) {
-    const sibling = splitStem(name)
+  for (const candidate of candidates) {
+    const sibling = splitStem(candidate.name)
     if (sibling.stem === raw.stem && PHOTO_EXT_SET.has(sibling.ext)) {
-      return {method: 'exact', photo: name}
+      return {method: 'exact', photo: candidate}
     }
   }
 
@@ -44,9 +53,9 @@ export function findPair(
     return null
   }
 
-  const candidates: string[] = []
-  for (const name of siblings) {
-    const sibling = splitStem(name)
+  const matches: PairCandidate[] = []
+  for (const candidate of candidates) {
+    const sibling = splitStem(candidate.name)
     if (!PHOTO_EXT_SET.has(sibling.ext)) {
       continue
     }
@@ -63,14 +72,14 @@ export function findPair(
     ) {
       continue
     }
-    candidates.push(name)
+    matches.push(candidate)
   }
 
-  if (candidates.length === 1) {
-    return {method: 'pass2', photo: candidates[0]!}
+  if (matches.length === 1) {
+    return {method: 'pass2', photo: matches[0]!}
   }
-  if (candidates.length >= 2) {
-    return {method: 'ambiguous', candidates}
+  if (matches.length >= 2) {
+    return {method: 'ambiguous', candidates: matches}
   }
   return null
 }

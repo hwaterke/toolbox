@@ -1,6 +1,6 @@
 import {promises as fs} from 'node:fs'
 import nodePath from 'node:path'
-import {findPair} from './findPair.ts'
+import {findPair, type PairCandidate} from './findPair.ts'
 import {resolveDestination} from './layout.ts'
 import type {ScannedFile} from './scan.ts'
 
@@ -74,7 +74,10 @@ export async function resolvePairs(
   const cache = input.cache ?? new DirectoryCache()
   const outcomes = new Map<string, PairOutcome>()
 
-  const batchNames = files.map((file) => file.name)
+  const batch: PairCandidate[] = files.map((file) => ({
+    name: file.name,
+    path: file.path,
+  }))
 
   for (const file of files) {
     if (!file.isRaw) {
@@ -91,22 +94,25 @@ export async function resolvePairs(
       event,
       source,
     })
-    const existing = await cache.list(nodePath.join(archiveRoot, photoFolder))
+    const photoDirectory = nodePath.join(archiveRoot, photoFolder)
+    const existing: PairCandidate[] = (await cache.list(photoDirectory)).map(
+      (name) => ({name, path: nodePath.join(photoDirectory, name)})
+    )
 
-    const result = findPair(file.name, [...batchNames, ...existing])
+    const result = findPair(file.name, [...batch, ...existing])
 
     if (result === null) {
       outcomes.set(file.path, {kind: 'unpaired'})
     } else if (result.method === 'ambiguous') {
       outcomes.set(file.path, {
         kind: 'ambiguous',
-        candidates: result.candidates,
+        candidates: result.candidates.map((candidate) => candidate.name),
       })
     } else {
       outcomes.set(file.path, {
         kind: 'paired',
         method: result.method,
-        photo: result.photo,
+        photo: result.photo.name,
       })
     }
   }
