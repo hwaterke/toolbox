@@ -1,3 +1,4 @@
+export {ensureFile, isDirectory} from './fsChecks.ts'
 export {moveFileIntoFolder} from './moveFileIntoFolder.ts'
 export {
   walkFiles,
