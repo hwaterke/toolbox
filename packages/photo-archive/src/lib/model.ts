@@ -72,6 +72,8 @@ export type SortedScope = {
   year: string | null
   path: string
   entries: ScopeEntry[]
+  /** The person folder this belongs to, or null under the archive's `sorted/`. */
+  person: string | null
 }
 
 /** One `relations/<person>/` folder. Its own listing only. */
@@ -121,18 +123,26 @@ export function scopeTree(scope: Scope): MediaTree | null {
   return null
 }
 
-/** A short label for one scope, used in findings and progress lines. */
+/**
+ * A short label for one scope, used in findings and progress lines. A person's
+ * scope carries the person: `aline` and `lucie` both have a `sorted/2015`, and
+ * without the prefix two different folders would report under one name.
+ */
 export function scopeLabel(scope: Scope): string {
+  const owner = scope.kind === 'root' ? null : scope.person
+  const prefix =
+    owner === null || owner === undefined ? '' : `relations/${owner}/`
+
   switch (scope.kind) {
     case 'root':
       return 'archive root'
     case 'sorted':
-      return scope.year === null ? 'sorted' : `sorted/${scope.year}`
+      return prefix + (scope.year === null ? 'sorted' : `sorted/${scope.year}`)
     case 'person':
       return `relations/${scope.person}`
     case 'event':
-      return scope.name
+      return prefix + scope.name
     case 'month':
-      return `sorted/${scope.year}/${scope.month}`
+      return `${prefix}sorted/${scope.year}/${scope.month}`
   }
 }

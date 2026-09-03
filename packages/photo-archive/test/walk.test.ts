@@ -69,10 +69,10 @@ describe('walkArchive', () => {
       'sorted:sorted/2025',
       'month:sorted/2025/05',
       'person:relations/sarah',
-      'event:2024-01-01-Trip',
-      'sorted:sorted',
-      'sorted:sorted/2024',
-      'month:sorted/2024/01',
+      'event:relations/sarah/2024-01-01-Trip',
+      'sorted:relations/sarah/sorted',
+      'sorted:relations/sarah/sorted/2024',
+      'month:relations/sarah/sorted/2024/01',
     ])
   })
 

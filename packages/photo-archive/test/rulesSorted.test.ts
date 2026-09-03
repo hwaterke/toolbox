@@ -43,6 +43,7 @@ const sorted = (year: string | null, entries: ScopeEntry[]): SortedScope => ({
   year,
   path: year === null ? '/archive/sorted' : `/archive/sorted/${year}`,
   entries,
+  person: null,
 })
 
 /** Build a month tree from relative paths; a trailing `/` marks a folder. */

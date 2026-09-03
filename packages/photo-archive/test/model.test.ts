@@ -19,12 +19,14 @@ const sorted: Scope = {
   year: null,
   path: '/a/sorted',
   entries: [],
+  person: null,
 }
 const year: Scope = {
   kind: 'sorted',
   year: '2025',
   path: '/a/sorted/2025',
   entries: [],
+  person: null,
 }
 const person: Scope = {
   kind: 'person',

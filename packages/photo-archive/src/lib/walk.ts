@@ -186,7 +186,7 @@ export async function* walkArchive(
     const years = await listEntries(sortedRoot)
     if (wanted(sortedRoot)) {
       yield report(
-        {kind: 'sorted', year: null, path: sortedRoot, entries: years},
+        {kind: 'sorted', year: null, path: sortedRoot, entries: years, person},
         0
       )
     }
@@ -203,6 +203,7 @@ export async function* walkArchive(
             year: yearEntry.name,
             path: yearEntry.path,
             entries: months,
+            person,
           },
           0
         )

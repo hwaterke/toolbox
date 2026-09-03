@@ -163,6 +163,20 @@ describe('photo-archive lint --format json', () => {
     expect(json.findings.map((f) => f.ruleId)).toStrictEqual(['root-file'])
   }, 30_000)
 
+  test('does not truncate a payload larger than a pipe buffer', async () => {
+    await tree.file('fs-ignore', '.DS_Store\n@eaDir/\n')
+    await tree.dir('sorted')
+    // Enough findings to pass 64 KiB of JSON, which is where an early
+    // process exit used to cut the output off mid-object.
+    for (let index = 0; index < 400; index++) {
+      await tree.file(`events/2025-05-10-Iceland/footage/clip${index}.thm`)
+    }
+
+    const {json} = await lint()
+    expect(json.findings).toHaveLength(400)
+    expect(json.findings.at(-1)?.ruleId).toBe('sidecar-file')
+  }, 30_000)
+
   test('a clean archive exits 0 with no findings', async () => {
     await tree.file('fs-ignore', '.DS_Store\n@eaDir/\n')
     await tree.dir('events')

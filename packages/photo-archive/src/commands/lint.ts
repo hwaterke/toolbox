@@ -71,10 +71,10 @@ export default class Lint extends Command {
         }
       }
 
-      const code = exitCode(report)
-      if (code !== 0) {
-        this.exit(code)
-      }
+      // Set the code rather than exiting: `this.exit` tears the process down
+      // before a large JSON payload has drained into a pipe, which truncates
+      // it at 64 KiB. Node flushes stdout on a natural exit.
+      process.exitCode = exitCode(report)
     } catch (error) {
       if (error instanceof PreflightError) {
         this.error(error.message, {exit: 2})
