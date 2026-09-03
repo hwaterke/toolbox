@@ -1,5 +1,6 @@
+import {splitStem} from '@hwaterke/file-utils'
 import {PAIR_WINDOW_SECONDS, PHOTO_EXT_SET} from './constants.ts'
-import {parseTimestampedName, splitStem} from './names.ts'
+import {parseTimestampedName} from './names.ts'
 
 export type FindPairResult =
   | {method: 'exact'; photo: string}

@@ -1,5 +1,6 @@
 export {ensureFile, isDirectory} from './fsChecks.ts'
 export {moveFileIntoFolder} from './moveFileIntoFolder.ts'
+export {splitStem} from './splitStem.ts'
 export {
   walkFiles,
   compareAsc,

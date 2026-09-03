@@ -1,8 +1,7 @@
 import {promises as fs} from 'node:fs'
 import nodePath from 'node:path'
-import {isDirectory} from '@hwaterke/file-utils'
+import {isDirectory, splitStem} from '@hwaterke/file-utils'
 import {BUCKET, MEDIA_EXT_SET} from './constants.ts'
-import {splitStem} from './names.ts'
 import {
   checkSourceLocation,
   isValidEventName,
