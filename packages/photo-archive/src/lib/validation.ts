@@ -87,6 +87,16 @@ export function isKebabCase(value: string): boolean {
   return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value)
 }
 
+/** `sorted/` holds four-digit year folders and nothing else. */
+export function isYearFolder(name: string): boolean {
+  return /^\d{4}$/.test(name)
+}
+
+/** A year folder holds zero-padded month folders `01` to `12`. */
+export function isMonthFolder(name: string): boolean {
+  return /^(0[1-9]|1[0-2])$/.test(name)
+}
+
 /**
  * `--source` must be a single safe path segment: `dji`, `iphone-aline`. No
  * separator, no `..`, no leading dot, no whitespace-only value (T5).
