@@ -1,7 +1,7 @@
 import {IgnoreManager} from '@hwaterke/file-utils'
 import {promises as fs} from 'node:fs'
 import nodePath from 'node:path'
-import {PANORAMA} from './constants.ts'
+import {LINTED_ROOTS, PANORAMA} from './constants.ts'
 import type {
   MediaTree,
   Scope,
@@ -12,9 +12,6 @@ import type {
 
 /** The archive's own ignore file, holding `.DS_Store` and `@eaDir/` (T7). */
 export const IGNORE_FILE = 'fs-ignore'
-
-/** The three top-level folders `lint` walks. Everything else is skipped. */
-export const LINTED_ROOTS = ['events', 'sorted', 'relations'] as const
 
 export type WalkProgress = {
   /** The scope just finished. */

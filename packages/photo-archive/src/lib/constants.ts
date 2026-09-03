@@ -28,6 +28,12 @@ export const MEDIA_EXTS = [
  */
 export const SIDECAR_EXTS = ['thm', 'xmp', 'aae'] as const
 
+/**
+ * The three top-level folders `lint` walks, and the only names allowed directly
+ * in a person folder. Every other top-level entry is skipped and reported.
+ */
+export const LINTED_ROOTS = ['events', 'sorted', 'relations'] as const
+
 /** The excluded sibling folder paired RAWs are moved into. */
 export const BUCKET = 'raw_versions'
 
