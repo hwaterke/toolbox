@@ -224,6 +224,16 @@ describe('classifyFootage', () => {
     expect(classifyFootage([entry('raw_versions', true)])).toBe('empty')
   })
 
+  test('panorama is not a grouping sub-folder', () => {
+    expect(classifyFootage([entry('panorama', true)])).toBe('empty')
+  })
+
+  test('a source folder merely containing panorama still groups (T4)', () => {
+    expect(classifyFootage([entry('dji-panorama', true)])).toBe('grouped')
+    expect(classifyFootage([entry('dji-PANORAMA', true)])).toBe('grouped')
+    expect(classifyFootage([entry('PANORAMA', true)])).toBe('grouped')
+  })
+
   test('a non-media file does not make it flat', () => {
     expect(classifyFootage([entry('notes.txt'), entry('.DS_Store')])).toBe(
       'empty'

@@ -17,6 +17,17 @@ export const MEDIA_EXTS = [
 /** The excluded sibling folder paired RAWs are moved into. */
 export const BUCKET = 'raw_versions'
 
+/**
+ * Stitched-panorama sets, allowed inside `footage/` and inside `raw_versions/`.
+ * A reserved lowercase name, matched exactly: `dji-panorama` and `dji-PANORAMA`
+ * are ordinary source folders, not this (T4). Never linted inside, and its
+ * contents nest one level deeper than anything else (T3).
+ */
+export const PANORAMA = 'panorama'
+
+/** Folder names that are reserved rather than source folders. */
+export const RESERVED_FOLDERS: ReadonlySet<string> = new Set([BUCKET, PANORAMA])
+
 /** Pass-2 pairing window: paired timestamps must be within this many seconds. */
 export const PAIR_WINDOW_SECONDS = 5
 

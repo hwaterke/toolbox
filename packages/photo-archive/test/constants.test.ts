@@ -4,9 +4,11 @@ import {
   MEDIA_EXTS,
   MEDIA_EXT_SET,
   PAIR_WINDOW_SECONDS,
+  PANORAMA,
   PHOTO_EXTS,
   RAW_EXTS,
   RAW_EXT_SET,
+  RESERVED_FOLDERS,
 } from '../src/lib/constants.ts'
 
 describe('MEDIA_EXTS', () => {
@@ -55,6 +57,14 @@ describe('RAW and photo extensions', () => {
 
 test('BUCKET is the raw_versions folder name', () => {
   expect(BUCKET).toBe('raw_versions')
+})
+
+test('PANORAMA is the lowercase panorama folder name', () => {
+  expect(PANORAMA).toBe('panorama')
+})
+
+test('RESERVED_FOLDERS is exactly the bucket and panorama', () => {
+  expect([...RESERVED_FOLDERS].sort()).toEqual(['panorama', 'raw_versions'])
 })
 
 test('PAIR_WINDOW_SECONDS is 5', () => {

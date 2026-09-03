@@ -1,7 +1,7 @@
 import {promises as fs} from 'node:fs'
 import nodePath from 'node:path'
 import {closestMatch, isDirectory, splitStem} from '@hwaterke/file-utils'
-import {BUCKET, MEDIA_EXT_SET} from './constants.ts'
+import {BUCKET, MEDIA_EXT_SET, RESERVED_FOLDERS} from './constants.ts'
 import {
   checkSourceLocation,
   isValidEventName,
@@ -50,7 +50,7 @@ export function classifyFootage(
       continue
     }
     if (entry.isDirectory) {
-      if (entry.name !== BUCKET) {
+      if (!RESERVED_FOLDERS.has(entry.name)) {
         hasSubfolder = true
       }
       continue
