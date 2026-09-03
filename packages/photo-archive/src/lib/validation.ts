@@ -79,6 +79,15 @@ export function isRealDate(year: number, month: number, day: number): boolean {
 }
 
 /**
+ * `dji`, `iphone-aline`, `mini3` — lower-case letters and digits, single dashes
+ * between them. The reserved `raw_versions` keeps its underscore and is never
+ * judged by this.
+ */
+export function isKebabCase(value: string): boolean {
+  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value)
+}
+
+/**
  * `--source` must be a single safe path segment: `dji`, `iphone-aline`. No
  * separator, no `..`, no leading dot, no whitespace-only value (T5).
  */
