@@ -90,9 +90,6 @@ importers:
       drizzle-orm:
         specifier: ^0.44.4
         version: 0.44.7(@libsql/client@0.15.15)
-      ignore:
-        specifier: ^7.0.5
-        version: 7.0.8
       ora:
         specifier: ^8.2.0
         version: 8.2.0

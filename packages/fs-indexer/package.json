@@ -35,7 +35,6 @@
     "@oclif/plugin-help": "^6",
     "@paralleldrive/cuid2": "^2.2.2",
     "drizzle-orm": "^0.44.4",
-    "ignore": "^7.0.5",
     "ora": "^8.2.0",
     "remeda": "^2.30.0",
     "winston": "^3",

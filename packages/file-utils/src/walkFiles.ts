@@ -80,16 +80,24 @@ const defaultOnError = (err: unknown, path: string): void => {
   )
 }
 
-class IgnoreManager {
+/**
+ * The stack of ignore files seen on the way down a tree. `walkFiles` drives one
+ * itself; it is exported for callers that need to ask the same question about a
+ * path they did not reach through a walk.
+ */
+export class IgnoreManager {
   private ignoreStack: {ig: Ignore; path: string}[] = []
 
-  private readonly ignoreFileName: string
+  private readonly ignoreFileName: string | null
 
-  constructor(ignoreFileName: string) {
+  /** A null `ignoreFileName` disables ignore handling entirely. */
+  constructor(ignoreFileName: string | null) {
     this.ignoreFileName = ignoreFileName
   }
 
   async addIgnoreFile(dirPath: string): Promise<boolean> {
+    if (this.ignoreFileName === null) return false
+
     const ignoreFilePath = nodePath.join(dirPath, this.ignoreFileName)
     try {
       const contents = await readFile(ignoreFilePath, 'utf8')

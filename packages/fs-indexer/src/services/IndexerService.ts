@@ -5,7 +5,7 @@ import {DatabaseService} from './DatabaseService.ts'
 import * as nodePath from 'node:path'
 import {HashingAlgorithmType, HashingService} from './HashingService.ts'
 import type {IndexedFile, IndexedFileWithHashes} from '../drizzle/schema.ts'
-import {IgnoreManager, walkDirOrFile} from '../walkDirOrFile.ts'
+import {IgnoreManager, walkFiles} from '@hwaterke/file-utils'
 import {formatBytes, formatNumber} from '../utils/Formatter.ts'
 import {LoggerService} from './LoggerService.ts'
 import ora from 'ora'
@@ -46,6 +46,11 @@ export class IndexerService {
     await this.databaseService.init()
   }
 
+  private logError(error: unknown, filePath: string): void {
+    this.logger.error(`Error processing ${filePath}`)
+    this.logger.error(String(error))
+  }
+
   async info(): Promise<void> {
     const fileCount = await this.databaseService.countFiles()
     this.logger.info(`${formatNumber(fileCount)} files indexed`)
@@ -70,11 +75,11 @@ export class IndexerService {
     path = expandPath(path)
     this.logger.debug(`Lookup ${path}`)
 
-    await walkDirOrFile({
+    await walkFiles({
       path,
-      options: {
-        ignoreFileName: null,
-      },
+      includeHidden: true,
+      onError: (error, filePath) => this.logError(error, filePath),
+      onErrorMode: 'stop',
       callback: async (filePath) => {
         this.logger.info(`Looking up ${filePath}`)
 
@@ -163,8 +168,6 @@ export class IndexerService {
             }
           }
         }
-
-        return {stop: false}
       },
     })
   }
@@ -453,11 +456,15 @@ export class IndexerService {
       : null
 
     spinner?.start(`Indexing files`)
-    await walkDirOrFile({
+    // `walkFiles` has no per-file stop signal, so the limits abort the walk.
+    const abortController = new AbortController()
+    await walkFiles({
       path,
-      options: {
-        ignoreFileName: ignoreFileName ?? null,
-      },
+      ignoreFileName,
+      includeHidden: true,
+      signal: abortController.signal,
+      onError: (error, filePath) => this.logError(error, filePath),
+      onErrorMode: 'stop',
       callback: async (filePath) => {
         try {
           this.metrics.filesCrawled++
@@ -478,14 +485,12 @@ export class IndexerService {
           const shouldStopForTime =
             minutes !== undefined && this.elapsedMinutes() > minutes
 
-          return {
-            stop: shouldStopForLimit || shouldStopForTime,
+          if (shouldStopForLimit || shouldStopForTime) {
+            abortController.abort()
           }
         } catch (error) {
-          this.logger.error(`Error processing ${filePath}`)
-          this.logger.error(String(error))
           // Skip this file and continue
-          return {stop: false}
+          this.logError(error, filePath)
         }
       },
     })
