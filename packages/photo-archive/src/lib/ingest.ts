@@ -4,8 +4,10 @@ import nodePath from 'node:path'
 import {resolveDestination} from './layout.ts'
 import {Manifest} from './manifest.ts'
 import {goesToBucket, resolvePairs, type PairOutcome} from './pairing.ts'
-import {preflight, type PreflightFailure} from './preflight.ts'
+import {preflight, PreflightError, type PreflightFailure} from './preflight.ts'
 import {scanSource, type RejectReason} from './scan.ts'
+
+export {PreflightError} from './preflight.ts'
 
 export type LeftBehindReason =
   RejectReason | 'destination_exists' | 'ambiguous_pair' | 'error'
@@ -43,8 +45,6 @@ export type IngestOptions = {
   onProgress?: ((message: string) => void) | undefined
   now?: (() => Date) | undefined
 }
-
-export class PreflightError extends Error {}
 
 /**
  * Move a batch of already-renamed media into the archive.

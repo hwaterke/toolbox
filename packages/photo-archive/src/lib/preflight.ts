@@ -32,6 +32,9 @@ export type PreflightFailure = {ok: false; error: string}
 
 export type PreflightResult = PreflightOk | PreflightFailure
 
+/** A refusal to start: the command turns it into exit code 2. */
+export class PreflightError extends Error {}
+
 const fail = (error: string): PreflightFailure => ({ok: false, error})
 
 export type FootageLayout = 'empty' | 'flat' | 'grouped' | 'mixed'
