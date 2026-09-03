@@ -13,17 +13,52 @@ export function isInsideBucket(p: string): boolean {
   return pathComponents(p).includes(BUCKET)
 }
 
+export type EventName = {
+  year: number
+  month: number
+  day: number
+  /** The part after the date, which may itself contain dashes. */
+  title: string
+}
+
+/**
+ * Split `YYYY-MM-DD-Name` into its fields. Shape only: the date is not checked
+ * here, so `lint` can tell a malformed name (`event-name-format`) apart from a
+ * well-formed impossible one (`event-name-date`).
+ */
+export function parseEventName(name: string): EventName | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})-(.+)$/.exec(name)
+  if (match === null) {
+    return null
+  }
+  return {
+    year: Number(match[1]!),
+    month: Number(match[2]!),
+    day: Number(match[3]!),
+    title: match[4]!,
+  }
+}
+
 /**
  * Event folder names are `YYYY-MM-DD-Name`, with a non-empty name that may
  * itself contain dashes (decision 15), and a date that really exists. Feb 30
  * and Nov 31 are rejected here, not just out-of-range fields (T5).
  */
 export function isValidEventName(name: string): boolean {
-  const match = /^(\d{4})-(\d{2})-(\d{2})-(.+)$/.exec(name)
-  if (match === null) {
+  const parsed = parseEventName(name)
+  if (parsed === null) {
     return false
   }
-  return isRealDate(Number(match[1]!), Number(match[2]!), Number(match[3]!))
+  return isRealDate(parsed.year, parsed.month, parsed.day)
+}
+
+/**
+ * `Iceland`, `SicilyDay2` — an upper-case letter, then letters and digits only.
+ * `Train-Case`, a lower-case start and a leading digit all fail, which is why
+ * the rule is a warning: 94 of 314 event folders do not comply yet.
+ */
+export function isPascalCase(value: string): boolean {
+  return /^[A-Z][A-Za-z0-9]*$/.test(value)
 }
 
 /**

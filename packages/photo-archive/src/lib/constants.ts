@@ -34,6 +34,17 @@ export const SIDECAR_EXTS = ['thm', 'xmp', 'aae'] as const
  */
 export const LINTED_ROOTS = ['events', 'sorted', 'relations'] as const
 
+/**
+ * Everything an event folder may hold. `footage/` carries the media; the rest
+ * is optional and never linted inside.
+ */
+export const EVENT_ENTRIES = [
+  'footage',
+  'assets',
+  'exports',
+  'README.md',
+] as const
+
 /** The excluded sibling folder paired RAWs are moved into. */
 export const BUCKET = 'raw_versions'
 
