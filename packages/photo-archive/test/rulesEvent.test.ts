@@ -12,6 +12,7 @@ import {
   eventNameFormat,
   eventRules,
   eventUnknownEntry,
+  mediaBeforeEvent,
 } from '../src/lib/rules/event.ts'
 import {runRule, type Rule} from '../src/lib/rules/types.ts'
 
@@ -153,6 +154,87 @@ describe('event-footage-missing', () => {
     expect(
       paths(eventFootageMissing, event('2025-05-10-Iceland'))
     ).toStrictEqual([])
+  })
+})
+
+describe('media-before-event', () => {
+  const EVENT = '2025-05-10-Iceland'
+  const ROOT = `/archive/events/${EVENT}/footage`
+
+  /** One footage tree holding exactly these files, all at its root. */
+  const withFiles = (names: string[]): MediaTree => ({
+    path: ROOT,
+    entries: names.map((name) => ({
+      name,
+      path: `${ROOT}/${name}`,
+      isDirectory: false,
+    })),
+    folders: [],
+    files: names.map((name) => ({
+      name,
+      path: `${ROOT}/${name}`,
+      relativePath: name,
+      folder: '',
+    })),
+  })
+
+  const on = (names: string[], maxDaysEarly = 1): string[] =>
+    runRule(mediaBeforeEvent, event(EVENT, {footage: withFiles(names)}), {
+      maxDaysEarly,
+    }).map((finding) => finding.path)
+
+  test('one day early passes, two days early warns', () => {
+    expect(on(['2025-05-09_10-00-00_IMG_1.JPG'])).toStrictEqual([])
+    expect(on(['2025-05-08_10-00-00_IMG_1.JPG'])).toStrictEqual([
+      `${ROOT}/2025-05-08_10-00-00_IMG_1.JPG`,
+    ])
+  })
+
+  test('the day itself and any day after it pass', () => {
+    expect(
+      on([
+        '2025-05-10_00-00-00_IMG_1.JPG',
+        '2025-05-31_23-59-59_IMG_2.JPG',
+        '2026-01-01_10-00-00_IMG_3.JPG',
+      ])
+    ).toStrictEqual([])
+  })
+
+  test('the late-evening shot before the event still passes', () => {
+    expect(on(['2025-05-09_23-59-59_IMG_1.JPG'])).toStrictEqual([])
+  })
+
+  test('a wider window moves the boundary', () => {
+    expect(on(['2025-05-08_10-00-00_IMG_1.JPG'], 2)).toStrictEqual([])
+    expect(on(['2025-05-07_10-00-00_IMG_1.JPG'], 2)).toHaveLength(1)
+  })
+
+  test('says how many days early', () => {
+    const scope = event(EVENT, {
+      footage: withFiles(['2025-05-01_10-00-00_IMG_1.JPG']),
+    })
+    const [finding] = runRule(mediaBeforeEvent, scope, {maxDaysEarly: 1})
+    expect(finding?.detail).toBe(`9 day(s) before ${EVENT}`)
+  })
+
+  test('ignores files it cannot date, and non-media', () => {
+    expect(
+      on(['IMG_0001.JPG', 'notes.txt', '2020-01-01_10-00-00_x.txt'])
+    ).toStrictEqual([])
+  })
+
+  test('says nothing when the event name is not a real date', () => {
+    const scope: Scope = {
+      kind: 'event',
+      name: '2025-02-30-Trip',
+      path: '/archive/events/2025-02-30-Trip',
+      entries: [],
+      footage: withFiles(['2020-01-01_10-00-00_IMG_1.JPG']),
+      person: null,
+    }
+    expect(runRule(mediaBeforeEvent, scope, {maxDaysEarly: 1})).toStrictEqual(
+      []
+    )
   })
 })
 

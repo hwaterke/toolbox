@@ -59,6 +59,13 @@ export const PANORAMA = 'panorama'
 /** Folder names that are reserved rather than source folders. */
 export const RESERVED_FOLDERS: ReadonlySet<string> = new Set([BUCKET, PANORAMA])
 
+/**
+ * How many days before its event a media file may be dated. One covers the
+ * evening-before shot and a timezone the camera was still set to; anything
+ * earlier is usually a file filed into the wrong event.
+ */
+export const DEFAULT_MAX_DAYS_EARLY = 1
+
 /** Pass-2 pairing window: paired timestamps must be within this many seconds. */
 export const PAIR_WINDOW_SECONDS = 5
 
