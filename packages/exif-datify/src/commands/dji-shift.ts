@@ -1,10 +1,11 @@
 import {Args, Command, Flags} from '@oclif/core'
-import {EXIF_DATE_TIME_FORMAT_WITH_TZ, updateTime} from '../lib/utils.ts'
+import {updateTime} from '../lib/utils.ts'
 import {durationToSeconds} from '../lib/duration.ts'
+import {parseExifClockWithOffset} from '../lib/exifTime.ts'
 import {DIFFERENCE_THRESHOLD_SECONDS, hourDifference} from '../lib/hourShift.ts'
 import nodePath from 'node:path'
 import fs from 'node:fs'
-import {DateTime} from 'luxon'
+import {Temporal} from 'temporal-polyfill'
 import {EXIF_TAGS, ExiftoolService} from '@hwaterke/media-probe'
 import {Logger} from '../lib/Logger.ts'
 import {
@@ -70,35 +71,33 @@ export default class DjiShiftCommand extends Command {
         if (fileTime === undefined) {
           throw new Error('No file modification date')
         }
-        const luxonFileTime = DateTime.fromFormat(
-          fileTime,
-          EXIF_DATE_TIME_FORMAT_WITH_TZ,
-          {zone: flags.zone}
-        )
+        const parsedFileTime = parseExifClockWithOffset(fileTime)
+        if (parsedFileTime === null) {
+          throw new Error(`Unreadable file modification date ${fileTime}`)
+        }
+        const fileDateTime = parsedFileTime.withTimeZone(flags.zone)
 
         // Extract the duration
         const duration = metadata[EXIF_TAGS.QUICKTIME_DURATION]
         const durationSeconds = duration ? durationToSeconds(duration) : 0
 
         // Extract the metadata time
-        const isoDateTimeFromExif = exifService.extractDateTimeFromExif({
+        const dateTimeFromExif = exifService.extractDateTimeFromExif({
           metadata,
           timeZone: flags.zone,
           fileTimeFallback: false,
         })
-        if (!isoDateTimeFromExif) {
+        if (!dateTimeFromExif) {
           throw new Error('No date found in metadata')
         }
-        const luxonMetadataTime = DateTime.fromISO(isoDateTimeFromExif.iso, {
-          setZone: true,
-        })
+        const metadataDateTime = dateTimeFromExif.when
 
         // Extract the SRT time
         const srtFile = nodePath.join(
           nodePath.dirname(entry),
           `${basename}.SRT`
         )
-        let srtLuxonTime: DateTime | undefined
+        let srtDateTime: Temporal.ZonedDateTime | undefined
         if (fs.existsSync(srtFile)) {
           const srtContent = fs.readFileSync(srtFile, 'utf8')
           // Format inside the SRT file is: 2025-06-28 20:06:08.108
@@ -106,41 +105,38 @@ export default class DjiShiftCommand extends Command {
             /(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})/
           )?.[1]
           if (srtTime) {
-            srtLuxonTime = DateTime.fromFormat(
-              srtTime,
-              'yyyy-MM-dd HH:mm:ss.SSS',
-              {
-                setZone: true,
-              }
+            // The SRT carries no zone, so it is read as a local wall clock.
+            srtDateTime = Temporal.ZonedDateTime.from(
+              `${srtTime.replace(' ', 'T')}[${Temporal.Now.timeZoneId()}]`
             )
           }
         }
 
         // Debug
-        this.log(`File time: ${luxonFileTime.toISO()}`)
-        this.log(`Metadata time: ${luxonMetadataTime.toISO()}`)
-        this.log(`SRT time: ${srtLuxonTime?.toISO()}`)
+        this.log(`File time: ${fileDateTime.toString()}`)
+        this.log(`Metadata time: ${metadataDateTime.toString()}`)
+        this.log(`SRT time: ${srtDateTime?.toString()}`)
         this.log(`Duration: ${duration}`)
         this.log(`Duration seconds: ${durationSeconds}`)
 
         // Check the difference between file time and exif time
         const roundHourDifference = hourDifference({
-          metadataTimeMs: luxonMetadataTime.toMillis(),
-          fileTimeMs: luxonFileTime.toMillis(),
+          metadataTimeMs: metadataDateTime.epochMilliseconds,
+          fileTimeMs: fileDateTime.epochMilliseconds,
           durationSeconds,
         })
 
         // Compute the correct time
-        const correctDateTime = luxonMetadataTime.minus({
+        const correctDateTime = metadataDateTime.subtract({
           hours: roundHourDifference,
         })
 
-        this.log(`Correct time: ${correctDateTime.toISO()}`)
+        this.log(`Correct time: ${correctDateTime.toString()}`)
 
         // Check if the SRT time is close to the correct time
-        if (srtLuxonTime) {
+        if (srtDateTime) {
           const srtDifferenceMs =
-            srtLuxonTime.toMillis() - correctDateTime.toMillis()
+            srtDateTime.epochMilliseconds - correctDateTime.epochMilliseconds
           const srtDifferenceSeconds = srtDifferenceMs / 1000
           this.log(`SRT difference: ${srtDifferenceSeconds} seconds`)
           if (srtDifferenceSeconds > DIFFERENCE_THRESHOLD_SECONDS) {

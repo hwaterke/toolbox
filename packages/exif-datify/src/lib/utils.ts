@@ -1,7 +1,8 @@
 import {promises as FS, constants} from 'node:fs'
 import {isDirectory} from '@hwaterke/file-utils'
 import {ExiftoolService} from '@hwaterke/media-probe'
-import {DateTime} from 'luxon'
+import type {Temporal} from 'temporal-polyfill'
+import {formatDateTime} from './format.ts'
 
 export const EXIF_DATE_TIME_FORMAT = 'yyyy:MM:dd HH:mm:ss'
 export const EXIF_DATE_TIME_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ssZZ'
@@ -27,12 +28,12 @@ export const updateTime = async ({
 }: {
   path: string
   ext: string
-  time: DateTime
+  time: Temporal.ZonedDateTime
   exifService: ExiftoolService
   dryRun: boolean
 }) => {
   if (['.MOV', '.MP4'].includes(ext)) {
-    const timeString = time.toFormat(EXIF_DATE_TIME_FORMAT_WITH_TZ)
+    const timeString = formatDateTime(time, EXIF_DATE_TIME_FORMAT_WITH_TZ)
     await exifService.setQuickTimeCreationDate(path, timeString, {
       override: true,
       ignoreMinorErrors: true,
@@ -50,9 +51,9 @@ export const updateTime = async ({
   if (['.DNG', '.JPG', '.NEF', '.PNG'].includes(ext)) {
     const timeString =
       time.millisecond === 0
-        ? time.toFormat(EXIF_DATE_TIME_FORMAT_WITH_TZ)
-        : time.toFormat(EXIF_DATE_TIME_SUBSEC_FORMAT_WITH_TZ)
-    const offsetString = time.toFormat(EXIF_OFFSET_FORMAT)
+        ? formatDateTime(time, EXIF_DATE_TIME_FORMAT_WITH_TZ)
+        : formatDateTime(time, EXIF_DATE_TIME_SUBSEC_FORMAT_WITH_TZ)
+    const offsetString = formatDateTime(time, EXIF_OFFSET_FORMAT)
     await exifService.setTimezoneOffsets(path, offsetString, {
       ignoreMinorErrors: true,
       override: true,

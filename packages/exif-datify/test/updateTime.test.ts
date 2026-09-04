@@ -1,5 +1,5 @@
 import {afterEach, describe, expect, test, vi} from 'vitest'
-import {DateTime} from 'luxon'
+import {Temporal} from 'temporal-polyfill'
 import {ExiftoolService} from '@hwaterke/media-probe'
 import {updateTime} from '../src/lib/utils.ts'
 
@@ -10,7 +10,11 @@ import {updateTime} from '../src/lib/utils.ts'
  * spied on and the arguments are the assertion.
  */
 
-const at = (iso: string): DateTime => DateTime.fromISO(iso, {setZone: true})
+/** Temporal needs an explicit `[zone]`, so the ISO offset is repeated as one. */
+const at = (iso: string): Temporal.ZonedDateTime =>
+  Temporal.ZonedDateTime.from(
+    iso.endsWith('Z') ? `${iso}[UTC]` : `${iso}[${iso.slice(-6)}]`
+  )
 
 const spy = () => {
   const exifService = new ExiftoolService({})

@@ -3,7 +3,7 @@ import {ExiftoolService} from '@hwaterke/media-probe'
 import {ensureFile} from '@hwaterke/file-utils'
 import {updateTime} from '../lib/utils.ts'
 import nodePath from 'node:path'
-import {DateTime} from 'luxon'
+import {parseUserDateTime} from '../lib/exifTime.ts'
 import {Logger} from '../lib/Logger.ts'
 
 export default class SetDateCommand extends Command {
@@ -36,9 +36,9 @@ export default class SetDateCommand extends Command {
     await ensureFile(path)
     const ext = nodePath.extname(path).toUpperCase()
 
-    const datetime = DateTime.fromISO(flags.time, {setZone: true})
+    const datetime = parseUserDateTime(flags.time)
 
-    if (!datetime.isValid) {
+    if (datetime === null) {
       this.error('Invalid date and time provided')
     }
 

@@ -56,3 +56,34 @@ export const baseOffsetMinutes = (time: Temporal.ZonedDateTime): number =>
 /** True when the zone is currently a DST step ahead of its base offset. */
 export const isInDst = (time: Temporal.ZonedDateTime): boolean =>
   offsetMinutes(time) !== baseOffsetMinutes(time)
+
+/** A trailing `Z` or `+HH:MM` / `+HHMM` / `+HH` on the time half of an ISO string. */
+const TRAILING_OFFSET_REGEX = /(?:Z|[+-]\d{2}(?::?\d{2})?)$/
+
+/**
+ * Reads what a user typed at `--time`. Temporal always wants an explicit
+ * `[zone]`, so one is supplied: the offset the string carries, or the
+ * machine's own zone for a naked local time. Returns `null` on anything
+ * unreadable, so the command can report it.
+ */
+export const parseUserDateTime = (
+  text: string
+): Temporal.ZonedDateTime | null => {
+  const trimmed = text.trim()
+
+  if (trimmed.includes('[')) {
+    return from(trimmed)
+  }
+
+  // Only the time half can carry an offset. Without this a plain `2024-04-03`
+  // would read its own `-03` as one.
+  const time = trimmed.slice(trimmed.indexOf('T') + 1)
+  const suffix = trimmed.includes('T')
+    ? TRAILING_OFFSET_REGEX.exec(time)?.[0]
+    : undefined
+
+  if (suffix !== undefined) {
+    return from(`${trimmed}[${suffix === 'Z' ? 'UTC' : suffix}]`)
+  }
+  return from(`${trimmed}[${Temporal.Now.timeZoneId()}]`)
+}
