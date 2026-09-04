@@ -3,8 +3,14 @@ import {
   EXIF_TAGS,
   type ExiftoolMetadata,
 } from '@hwaterke/media-probe'
-import {DateTime, FixedOffsetZone} from 'luxon'
 import nodePath from 'node:path'
+import {
+  baseOffsetMinutes,
+  isInDst,
+  offsetMinutes,
+  parseExifClock,
+} from './exifTime.ts'
+import {formatDateTime} from './format.ts'
 import type {Plan} from './plan.ts'
 
 /*
@@ -118,17 +124,6 @@ const minutesToOffset = (minutes: number): string => {
   const rest = String(absolute % 60).padStart(2, '0')
   return `${sign}${hours}:${rest}`
 }
-
-/**
- * The zone's offset with DST excluded. DST only ever adds time, so the smaller
- * of the two mid-season offsets is the base one. Asking the zone beats
- * assuming "one hour": Lord Howe Island shifts by 30 minutes.
- */
-const baseOffsetMinutes = (dateTime: DateTime): number =>
-  Math.min(
-    dateTime.set({month: 1, day: 15}).offset,
-    dateTime.set({month: 7, day: 15}).offset
-  )
 
 /**
  * An older version of this tool wrote a correct `OffsetTimeOriginal` and then
@@ -254,20 +249,20 @@ const readTargetZone = ({
     }
   }
 
-  const inZone = DateTime.fromFormat(clockTime, EXIF_DATE_TIME_FORMAT, {zone})
-  if (!inZone.isValid) {
+  const inZone = parseExifClock(clockTime, zone)
+  if (inZone === null) {
     return {
       verdict: 'failed',
-      reason: `cannot read ${clockTime} in ${zone}: ${inZone.invalidReason}`,
+      reason: `cannot read ${clockTime} in ${zone}`,
     }
   }
 
-  if (camera === null || camera.offsetMinutes === inZone.offset) {
+  if (camera === null || camera.offsetMinutes === offsetMinutes(inZone)) {
     return {
       clockTime,
-      offsetMinutes: inZone.offset,
+      offsetMinutes: offsetMinutes(inZone),
       baseMinutes: baseOffsetMinutes(inZone),
-      daylightSavings: inZone.isInDST,
+      daylightSavings: isInDst(inZone),
     }
   }
 
@@ -276,22 +271,30 @@ const readTargetZone = ({
   if (!convertZone) {
     return {
       verdict: 'skipped',
-      reason: `camera says ${minutesToOffset(camera.offsetMinutes)} but ${zone} says ${minutesToOffset(inZone.offset)}, use --convert-zone to re-express the instant`,
+      reason: `camera says ${minutesToOffset(camera.offsetMinutes)} but ${zone} says ${minutesToOffset(offsetMinutes(inZone))}, use --convert-zone to re-express the instant`,
     }
   }
 
   // Keep the instant, change how it is expressed. The MakerNotes end up
   // agreeing with `zone`, so a second run sees no disagreement and does
   // nothing - the conversion converges instead of shifting twice.
-  const converted = DateTime.fromFormat(clockTime, EXIF_DATE_TIME_FORMAT, {
-    zone: FixedOffsetZone.instance(camera.offsetMinutes),
-  }).setZone(zone)
+  const atCameraOffset = parseExifClock(
+    clockTime,
+    minutesToOffset(camera.offsetMinutes)
+  )
+  if (atCameraOffset === null) {
+    return {
+      verdict: 'failed',
+      reason: `cannot read ${clockTime} at ${minutesToOffset(camera.offsetMinutes)}`,
+    }
+  }
+  const converted = atCameraOffset.withTimeZone(zone)
 
   return {
-    clockTime: converted.toFormat(EXIF_DATE_TIME_FORMAT),
-    offsetMinutes: converted.offset,
+    clockTime: formatDateTime(converted, EXIF_DATE_TIME_FORMAT),
+    offsetMinutes: offsetMinutes(converted),
     baseMinutes: baseOffsetMinutes(converted),
-    daylightSavings: converted.isInDST,
+    daylightSavings: isInDst(converted),
   }
 }
 

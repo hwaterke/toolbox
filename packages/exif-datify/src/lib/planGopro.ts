@@ -5,8 +5,9 @@ import {
   EXIF_TAGS,
   type ExiftoolMetadata,
 } from '@hwaterke/media-probe'
-import {DateTime} from 'luxon'
 import nodePath from 'node:path'
+import {parseExifClock, parseExifClockWithOffset} from './exifTime.ts'
+import {formatDateTime} from './format.ts'
 import type {Plan} from './plan.ts'
 
 /*
@@ -101,16 +102,10 @@ const planVideo = (
   const halfWritten = recordedAnchor !== undefined
 
   const anchor = halfWritten
-    ? DateTime.fromFormat(recordedAnchor, EXIF_DATE_TIME_FORMAT_WITH_TZ, {
-        setZone: true,
-      })
-    : DateTime.fromFormat(
-        metadata[EXIF_TAGS.QUICKTIME_CREATE_DATE] ?? '',
-        EXIF_DATE_TIME_FORMAT,
-        {zone}
-      )
+    ? parseExifClockWithOffset(recordedAnchor)
+    : parseExifClock(metadata[EXIF_TAGS.QUICKTIME_CREATE_DATE] ?? '', zone)
 
-  if (!anchor.isValid) {
+  if (anchor === null) {
     return failed(
       halfWritten
         ? `unreadable QuickTime:Keys:CreationDate ${recordedAnchor}`
@@ -118,8 +113,11 @@ const planVideo = (
     )
   }
 
-  const anchorString = anchor.toFormat(EXIF_DATE_TIME_FORMAT_WITH_TZ)
-  const storedUtc = anchor.toUTC().toFormat(EXIF_DATE_TIME_FORMAT)
+  const anchorString = formatDateTime(anchor, EXIF_DATE_TIME_FORMAT_WITH_TZ)
+  const storedUtc = formatDateTime(
+    anchor.withTimeZone('UTC'),
+    EXIF_DATE_TIME_FORMAT
+  )
 
   const writes: string[] = []
   if (recordedAnchor !== anchorString) {
@@ -181,14 +179,12 @@ const planPhoto = (
     return failed('no DateTimeOriginal')
   }
 
-  const inZone = DateTime.fromFormat(clockTime, EXIF_DATE_TIME_FORMAT, {zone})
-  if (!inZone.isValid) {
-    return failed(
-      `cannot read ${clockTime} in ${zone}: ${inZone.invalidReason}`
-    )
+  const inZone = parseExifClock(clockTime, zone)
+  if (inZone === null) {
+    return failed(`cannot read ${clockTime} in ${zone}`)
   }
 
-  const offset = inZone.toFormat(EXIF_OFFSET_FORMAT)
+  const offset = formatDateTime(inZone, EXIF_OFFSET_FORMAT)
   const desired: {readTag: string; writeTag: string; value: string}[] = [
     {
       readTag: EXIF_TAGS.EXIF_OFFSET_TIME,
