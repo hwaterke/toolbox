@@ -59,6 +59,9 @@ importers:
       luxon:
         specifier: ^3
         version: 3.7.2
+      temporal-polyfill:
+        specifier: 'catalog:'
+        version: 1.0.4
     devDependencies:
       '@types/luxon':
         specifier: ^3
@@ -124,13 +127,13 @@ importers:
       luxon:
         specifier: ^3.7.2
         version: 3.7.2
+      temporal-polyfill:
+        specifier: 'catalog:'
+        version: 1.0.4
     devDependencies:
       '@types/luxon':
         specifier: ^3
         version: 3.7.5
-      temporal-polyfill:
-        specifier: 'catalog:'
-        version: 1.0.4
 
   packages/photo-archive:
     dependencies:
@@ -146,6 +149,9 @@ importers:
       chalk:
         specifier: ^5
         version: 5.6.2
+      temporal-polyfill:
+        specifier: 'catalog:'
+        version: 1.0.4
 
 packages:
 

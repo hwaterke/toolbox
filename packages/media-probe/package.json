@@ -11,11 +11,11 @@
   },
   "dependencies": {
     "@hwaterke/file-utils": "workspace:*",
-    "luxon": "^3.7.2"
+    "luxon": "^3.7.2",
+    "temporal-polyfill": "catalog:"
   },
   "devDependencies": {
-    "@types/luxon": "^3",
-    "temporal-polyfill": "catalog:"
+    "@types/luxon": "^3"
   },
   "engines": {
     "node": ">=24"
