@@ -132,7 +132,7 @@ export async function processNikon({
   if (ext === '.NEF') {
     // We do this to add the time offset to the XMP CreateDate tag
     await exifService.exiftool({
-      args: ['-P', `-CreateDate="${timeString}"`],
+      args: ['-P', `-CreateDate=${timeString}`],
       path,
       options: {
         override: true,

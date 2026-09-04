@@ -1,4 +1,4 @@
-import {exec as callbackExec} from 'node:child_process'
+import {execFile as callbackExecFile} from 'node:child_process'
 import {promisify} from 'node:util'
 import {ensureFile} from '@hwaterke/file-utils'
 import {
@@ -20,7 +20,18 @@ import type {ExiftoolMetadata} from './types/ExiftoolMetadata.ts'
 import {DateTime} from 'luxon'
 import type {Logger} from './types/Logger.ts'
 
-const exec = promisify(callbackExec)
+const execFile = promisify(callbackExecFile)
+
+const SHELL_SAFE_REGEX = /^[\w@%+=:,./-]+$/
+
+/**
+ * Arguments are passed to exiftool as an array, so no quoting is needed for
+ * correctness. This only makes the command the logger prints copy-pasteable.
+ */
+const quoteForDisplay = (argument: string): string =>
+  SHELL_SAFE_REGEX.test(argument)
+    ? argument
+    : `'${argument.replaceAll("'", String.raw`'\''`)}'`
 
 export type ExiftoolServiceConfig = {
   logger?: Logger
@@ -54,7 +65,7 @@ export class ExiftoolService {
    */
   async extractTimeExifMetadata(path: string): Promise<ExiftoolMetadata> {
     const rawResult = await this.exiftool({
-      args: ['-Time:All', '-api QuickTimeUTC', '-G0:1', '-json'],
+      args: ['-Time:All', '-api', 'QuickTimeUTC', '-G0:1', '-json'],
       path,
       options: {
         override: false,
@@ -232,7 +243,7 @@ export class ExiftoolService {
     }
 
     await this.exiftool({
-      args: ['-api QuickTimeUTC', '-P', `-quicktime:CreationDate="${time}"`],
+      args: ['-api', 'QuickTimeUTC', '-P', `-quicktime:CreationDate=${time}`],
       path,
       options,
     })
@@ -264,12 +275,14 @@ export class ExiftoolService {
 
     await this.exiftool({
       args: [
-        '-api QuickTimeUTC',
-        '-wm w',
-        `-time:all="${time}"`,
-        options.file
-          ? `-FileCreateDate="${time}" -FileModifyDate="${time}"`
-          : '-P',
+        '-api',
+        'QuickTimeUTC',
+        '-wm',
+        'w',
+        `-time:all=${time}`,
+        ...(options.file
+          ? [`-FileCreateDate=${time}`, `-FileModifyDate=${time}`]
+          : ['-P']),
       ],
       path,
       options,
@@ -297,9 +310,9 @@ export class ExiftoolService {
     await this.exiftool({
       args: [
         '-P',
-        `-OffsetTime="${offset}"`,
-        `-OffsetTimeOriginal="${offset}"`,
-        `-OffsetTimeDigitized="${offset}"`,
+        `-OffsetTime=${offset}`,
+        `-OffsetTimeOriginal=${offset}`,
+        `-OffsetTimeDigitized=${offset}`,
       ],
       path,
       options,
@@ -361,7 +374,7 @@ export class ExiftoolService {
     }
   ): Promise<void> {
     await this.exiftool({
-      args: ['-P', `-gpsposition="${latitude},${longitude}"`],
+      args: ['-P', `-gpsposition=${latitude},${longitude}`],
       path,
       options,
     })
@@ -383,32 +396,33 @@ export class ExiftoolService {
     await ensureFile(path)
 
     return await this.rawExiftool({
-      command: [
+      args: [
         ...(options.override ? ['-overwrite_original'] : []),
         ...(options.ignoreMinorErrors ? ['-m'] : []),
         ...args,
-        `"${path}"`,
-      ].join(' '),
+        path,
+      ],
       dryRun: options.dryRun,
     })
   }
 
   private async rawExiftool({
-    command,
+    args,
     dryRun,
   }: {
-    command: string
+    args: string[]
     dryRun: boolean
   }): Promise<string> {
-    const fullCommand = `exiftool ${command}`
-
-    this.config.logger?.command(fullCommand, dryRun)
+    this.config.logger?.command(
+      ['exiftool', ...args].map(quoteForDisplay).join(' '),
+      dryRun
+    )
 
     if (dryRun) {
       return ''
     }
 
-    const {stdout} = await exec(fullCommand)
+    const {stdout} = await execFile('exiftool', args)
     return stdout
   }
 

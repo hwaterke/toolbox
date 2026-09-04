@@ -124,7 +124,7 @@ export default class NikonFixCommand extends Command {
 
             // Set the new offset
             await exifService.exiftool({
-              args: ['-P', `-Nikon:TimeZone="${newOffset}"`],
+              args: ['-P', `-Nikon:TimeZone=${newOffset}`],
               path: entry,
               options: {
                 override: true,
