@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import {Temporal} from 'temporal-polyfill'
 import {RULES, type Finding, type Severity} from './rules/index.ts'
 
 /** How many findings of one rule are listed before the rest are counted. */
@@ -28,11 +29,24 @@ export type LintReport = {
   verbose: boolean
 }
 
-/** `8m 10s`, or `47s` under a minute. A full run takes about eight minutes. */
+/**
+ * `8m 10s`, or `47s` under a minute. A full run takes about eight minutes.
+ *
+ * Minutes are the largest unit on purpose: a very long run reads `90m 0s`,
+ * not `1h 30m 0s`.
+ */
 export function formatDuration(durationMs: number): string {
-  const seconds = Math.round(durationMs / 1000)
-  const minutes = Math.floor(seconds / 60)
-  return minutes === 0 ? `${seconds}s` : `${minutes}m ${seconds % 60}s`
+  const elapsed = Temporal.Duration.from({
+    milliseconds: Math.round(durationMs),
+  }).round({
+    largestUnit: 'minute',
+    smallestUnit: 'second',
+    roundingMode: 'halfExpand',
+  })
+
+  return elapsed.minutes === 0
+    ? `${elapsed.seconds}s`
+    : `${elapsed.minutes}m ${elapsed.seconds}s`
 }
 
 /** The rule ids that actually fired, in registry order. */

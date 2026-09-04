@@ -40,6 +40,12 @@ describe('formatDuration', () => {
     expect(formatDuration(490_000)).toBe('8m 10s')
     expect(formatDuration(47_000)).toBe('47s')
     expect(formatDuration(60_000)).toBe('1m 0s')
+    // Minutes keep counting past an hour rather than rolling over.
+    expect(formatDuration(5_400_000)).toBe('90m 0s')
+    expect(formatDuration(3_661_000)).toBe('61m 1s')
+    expect(formatDuration(0)).toBe('0s')
+    expect(formatDuration(499)).toBe('0s')
+    expect(formatDuration(500)).toBe('1s')
   })
 })
 
