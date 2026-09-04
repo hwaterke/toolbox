@@ -2,14 +2,9 @@ import {execFile as callbackExecFile} from 'node:child_process'
 import {promisify} from 'node:util'
 import {ensureFile} from '@hwaterke/file-utils'
 import {
-  EXIF_DATE_TIME_FORMAT,
-  EXIF_DATE_TIME_FORMAT_WITH_TZ,
   EXIF_DATE_TIME_REGEX,
-  EXIF_DATE_TIME_SUBSEC2_FORMAT_WITH_TZ,
   EXIF_DATE_TIME_SUBSEC2_WITH_TZ_REGEX,
-  EXIF_DATE_TIME_SUBSEC3_FORMAT_WITH_TZ,
   EXIF_DATE_TIME_SUBSEC3_WITH_TZ_REGEX,
-  EXIF_DATE_TIME_SUBSEC_FORMAT,
   EXIF_DATE_TIME_SUBSEC_REGEX,
   EXIF_DATE_TIME_WITH_TZ_REGEX,
   EXIF_DATE_TIME_WITH_UTC_REGEX,
@@ -17,10 +12,33 @@ import {
 } from './utils.ts'
 import {EXIF_TAGS} from './types/ExiftoolMetadata.ts'
 import type {ExiftoolMetadata} from './types/ExiftoolMetadata.ts'
-import {DateTime} from 'luxon'
+import {Temporal} from 'temporal-polyfill'
 import type {Logger} from './types/Logger.ts'
 
 const execFile = promisify(callbackExecFile)
+
+/** `2024:04:06 18:51:45` -> `2024-04-06T18:51:45`. */
+const toIsoShape = (date: string): string =>
+  `${date.slice(0, 10).replaceAll(':', '-')}T${date.slice(11)}`
+
+/**
+ * The ISO string this package has always returned: three fractional digits,
+ * no `[zone]` suffix, and `Z` rather than `+00:00` when the zone itself is
+ * UTC or a zero fixed offset. A named zone sitting at +00:00 - London in
+ * winter - still prints `+00:00`.
+ *
+ * The shape is stored in databases downstream, so it must not drift.
+ */
+export const toExifIso = (zoned: Temporal.ZonedDateTime): string => {
+  const iso = zoned.toString({
+    fractionalSecondDigits: 3,
+    timeZoneName: 'never',
+  })
+  const id = zoned.timeZoneId
+  return id === 'UTC' || /^[+-]00:00$/.test(id)
+    ? iso.replace(/[+-]00:00$/, 'Z')
+    : iso
+}
 
 const SHELL_SAFE_REGEX = /^[\w@%+=:,./-]+$/
 
@@ -91,6 +109,7 @@ export class ExiftoolService {
     source: string
     raw: string
     iso: string
+    when: Temporal.ZonedDateTime
   } | null {
     const tags = [
       EXIF_TAGS.SUB_SEC_DATE_TIME_ORIGINAL,
@@ -106,11 +125,12 @@ export class ExiftoolService {
           date: value,
           fallbackTimeZone: timeZone,
         })
-        if (parsed && parsed.isValid) {
+        if (parsed) {
           return {
             source: tag,
             raw: value,
-            iso: parsed.toISO()!,
+            iso: toExifIso(parsed),
+            when: parsed,
           }
         }
       }
@@ -125,11 +145,12 @@ export class ExiftoolService {
           date: createDate,
           fallbackTimeZone: timeZone,
         })
-        if (date && date.isValid) {
+        if (date) {
           return {
             source: EXIF_TAGS.QUICKTIME_CREATE_DATE,
             raw: createDate,
-            iso: date.toISO()!,
+            iso: toExifIso(date),
+            when: date,
           }
         }
       } else {
@@ -138,15 +159,14 @@ export class ExiftoolService {
           date: createDate,
           fallbackTimeZone: 'utc',
         })
-        if (date && date.isValid) {
-          const iso = timeZone
-            ? date.setZone(timeZone).toISO()
-            : date.toLocal().toISO()
+        if (date) {
+          const when = date.withTimeZone(timeZone ?? Temporal.Now.timeZoneId())
 
           return {
             source: EXIF_TAGS.QUICKTIME_CREATE_DATE,
             raw: createDate,
-            iso: iso!,
+            iso: toExifIso(when),
+            when,
           }
         }
       }
@@ -159,11 +179,12 @@ export class ExiftoolService {
           date: fileModifyDate,
         })
 
-        if (date && date.isValid) {
+        if (date) {
           return {
             source: EXIF_TAGS.FILE_MODIFICATION_DATE,
             raw: fileModifyDate,
-            iso: date.toISO()!,
+            iso: toExifIso(date),
+            when: date,
           }
         }
       }
@@ -426,43 +447,44 @@ export class ExiftoolService {
     return stdout
   }
 
+  /**
+   * Temporal refuses a bare offset ISO, so every branch appends an explicit
+   * `[zone]` bracket - either the offset the string carries, or the fallback
+   * zone the caller gave.
+   */
   private parseDateTime({
     date,
     fallbackTimeZone,
   }: {
     date: string
     fallbackTimeZone?: string
-  }): DateTime | null {
-    if (EXIF_DATE_TIME_SUBSEC3_WITH_TZ_REGEX.test(date)) {
-      return DateTime.fromFormat(date, EXIF_DATE_TIME_SUBSEC3_FORMAT_WITH_TZ, {
-        setZone: true,
-      })
+  }): Temporal.ZonedDateTime | null {
+    const zone = fallbackTimeZone ?? Temporal.Now.timeZoneId()
+
+    const from = (text: string): Temporal.ZonedDateTime | null => {
+      try {
+        return Temporal.ZonedDateTime.from(text)
+      } catch {
+        return null
+      }
     }
-    if (EXIF_DATE_TIME_SUBSEC2_WITH_TZ_REGEX.test(date)) {
-      return DateTime.fromFormat(date, EXIF_DATE_TIME_SUBSEC2_FORMAT_WITH_TZ, {
-        setZone: true,
-      })
-    }
-    if (EXIF_DATE_TIME_SUBSEC_REGEX.test(date)) {
-      return DateTime.fromFormat(date, EXIF_DATE_TIME_SUBSEC_FORMAT, {
-        zone: fallbackTimeZone,
-      })
-    }
-    if (EXIF_DATE_TIME_WITH_TZ_REGEX.test(date)) {
-      return DateTime.fromFormat(date, EXIF_DATE_TIME_FORMAT_WITH_TZ, {
-        setZone: true,
-      })
+
+    if (
+      EXIF_DATE_TIME_SUBSEC3_WITH_TZ_REGEX.test(date) ||
+      EXIF_DATE_TIME_SUBSEC2_WITH_TZ_REGEX.test(date) ||
+      EXIF_DATE_TIME_WITH_TZ_REGEX.test(date)
+    ) {
+      return from(`${toIsoShape(date)}[${date.slice(-6)}]`)
     }
     if (EXIF_DATE_TIME_WITH_UTC_REGEX.test(date)) {
       // Remove Z at the end of the string
-      return DateTime.fromFormat(date.slice(0, -1), EXIF_DATE_TIME_FORMAT, {
-        zone: 'utc',
-      })
+      return from(`${toIsoShape(date.slice(0, -1))}[UTC]`)
     }
-    if (EXIF_DATE_TIME_REGEX.test(date)) {
-      return DateTime.fromFormat(date, EXIF_DATE_TIME_FORMAT, {
-        zone: fallbackTimeZone,
-      })
+    if (
+      EXIF_DATE_TIME_SUBSEC_REGEX.test(date) ||
+      EXIF_DATE_TIME_REGEX.test(date)
+    ) {
+      return from(`${toIsoShape(date)}[${zone}]`)
     }
     return null
   }

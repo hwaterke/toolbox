@@ -13,7 +13,4 @@ export const EXIF_DATE_TIME_SUBSEC3_WITH_TZ_REGEX =
 
 export const EXIF_DATE_TIME_FORMAT = 'yyyy:MM:dd HH:mm:ss'
 export const EXIF_DATE_TIME_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ssZZ'
-export const EXIF_DATE_TIME_SUBSEC_FORMAT = 'yyyy:MM:dd HH:mm:ss.uu'
-export const EXIF_DATE_TIME_SUBSEC2_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ss.uuZZ'
-export const EXIF_DATE_TIME_SUBSEC3_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ss.SSSZZ'
 export const EXIF_OFFSET_FORMAT = 'ZZ'

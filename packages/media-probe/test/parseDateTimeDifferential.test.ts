@@ -3,7 +3,7 @@ import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs'
 import nodePath from 'node:path'
 import {DateTime} from 'luxon'
 import {Temporal} from 'temporal-polyfill'
-import {ExiftoolService} from '../src/ExiftoolService.ts'
+import {ExiftoolService, toExifIso} from '../src/ExiftoolService.ts'
 
 /**
  * TEMPORARY (deleted in step 3.1 of LUXON-TO-TEMPORAL.md).
@@ -134,23 +134,6 @@ const buildCorpus = (): Case[] => {
 
 const service = new ExiftoolService({})
 
-/**
- * What ships today. `parseDateTime` is private, so it is reached by index;
- * this file is deleted before that matters.
- */
-const parseWithLuxon = (testCase: Case): string | null => {
-  const parsed = (
-    service as unknown as {
-      parseDateTime: (arg: {
-        date: string
-        fallbackTimeZone?: string
-      }) => DateTime | null
-    }
-  ).parseDateTime({date: testCase.date, fallbackTimeZone: testCase.zone})
-
-  return parsed && parsed.isValid ? parsed.toISO() : null
-}
-
 const EXIF_DATE_TIME_REGEX = /^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}$/
 const EXIF_DATE_TIME_WITH_TZ_REGEX =
   /^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/
@@ -162,61 +145,70 @@ const EXIF_DATE_TIME_SUBSEC2_WITH_TZ_REGEX =
 const EXIF_DATE_TIME_SUBSEC3_WITH_TZ_REGEX =
   /^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/
 
-/** `2024:04:06 18:51:45` -> `2024-04-06T18:51:45`. */
-const toIsoShape = (date: string): string =>
-  `${date.slice(0, 10).replaceAll(':', '-')}T${date.slice(11)}`
-
 /**
- * luxon prints `Z` rather than `+00:00`, but only when the zone itself is
- * UTC or a zero fixed offset. A named zone sitting at +00:00 - London in
- * winter - still prints `+00:00`, in both libraries.
+ * What shipped before this migration, kept here verbatim so the two libraries
+ * can still be run side by side. Deleted with this file.
  */
-const render = (zoned: Temporal.ZonedDateTime): string => {
-  const iso = zoned.toString({
-    fractionalSecondDigits: 3,
-    timeZoneName: 'never',
-  })
-  const id = zoned.timeZoneId
-  return id === 'UTC' || /^[+-]00:00$/.test(id)
-    ? iso.replace(/[+-]00:00$/, 'Z')
-    : iso
+const EXIF_DATE_TIME_FORMAT = 'yyyy:MM:dd HH:mm:ss'
+const EXIF_DATE_TIME_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ssZZ'
+const EXIF_DATE_TIME_SUBSEC_FORMAT = 'yyyy:MM:dd HH:mm:ss.uu'
+const EXIF_DATE_TIME_SUBSEC2_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ss.uuZZ'
+const EXIF_DATE_TIME_SUBSEC3_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ss.SSSZZ'
+
+const parseWithLuxon = (testCase: Case): string | null => {
+  const {date} = testCase
+  const fallbackTimeZone = testCase.zone
+
+  const parsed = ((): DateTime | null => {
+    if (EXIF_DATE_TIME_SUBSEC3_WITH_TZ_REGEX.test(date)) {
+      return DateTime.fromFormat(date, EXIF_DATE_TIME_SUBSEC3_FORMAT_WITH_TZ, {
+        setZone: true,
+      })
+    }
+    if (EXIF_DATE_TIME_SUBSEC2_WITH_TZ_REGEX.test(date)) {
+      return DateTime.fromFormat(date, EXIF_DATE_TIME_SUBSEC2_FORMAT_WITH_TZ, {
+        setZone: true,
+      })
+    }
+    if (EXIF_DATE_TIME_SUBSEC_REGEX.test(date)) {
+      return DateTime.fromFormat(date, EXIF_DATE_TIME_SUBSEC_FORMAT, {
+        zone: fallbackTimeZone,
+      })
+    }
+    if (EXIF_DATE_TIME_WITH_TZ_REGEX.test(date)) {
+      return DateTime.fromFormat(date, EXIF_DATE_TIME_FORMAT_WITH_TZ, {
+        setZone: true,
+      })
+    }
+    if (EXIF_DATE_TIME_WITH_UTC_REGEX.test(date)) {
+      // Remove Z at the end of the string
+      return DateTime.fromFormat(date.slice(0, -1), EXIF_DATE_TIME_FORMAT, {
+        zone: 'utc',
+      })
+    }
+    if (EXIF_DATE_TIME_REGEX.test(date)) {
+      return DateTime.fromFormat(date, EXIF_DATE_TIME_FORMAT, {
+        zone: fallbackTimeZone,
+      })
+    }
+    return null
+  })()
+
+  return parsed && parsed.isValid ? parsed.toISO() : null
 }
 
-/** The proposed replacement, kept behind the same six regexes. */
+/** What ships now: the parse layer inside `ExiftoolService`. */
 const parseWithTemporal = (testCase: Case): string | null => {
-  const {date} = testCase
-  const zone = testCase.zone ?? Temporal.Now.timeZoneId()
-
-  const from = (text: string): string | null => {
-    try {
-      return render(Temporal.ZonedDateTime.from(text))
-    } catch {
-      return null
+  const parsed = (
+    service as unknown as {
+      parseDateTime: (arg: {
+        date: string
+        fallbackTimeZone?: string
+      }) => Temporal.ZonedDateTime | null
     }
-  }
+  ).parseDateTime({date: testCase.date, fallbackTimeZone: testCase.zone})
 
-  if (EXIF_DATE_TIME_SUBSEC3_WITH_TZ_REGEX.test(date)) {
-    const offset = date.slice(-6)
-    return from(`${toIsoShape(date)}[${offset}]`)
-  }
-  if (EXIF_DATE_TIME_SUBSEC2_WITH_TZ_REGEX.test(date)) {
-    const offset = date.slice(-6)
-    return from(`${toIsoShape(date)}[${offset}]`)
-  }
-  if (EXIF_DATE_TIME_SUBSEC_REGEX.test(date)) {
-    return from(`${toIsoShape(date)}[${zone}]`)
-  }
-  if (EXIF_DATE_TIME_WITH_TZ_REGEX.test(date)) {
-    const offset = date.slice(-6)
-    return from(`${toIsoShape(date)}[${offset}]`)
-  }
-  if (EXIF_DATE_TIME_WITH_UTC_REGEX.test(date)) {
-    return from(`${toIsoShape(date.slice(0, -1))}[UTC]`)
-  }
-  if (EXIF_DATE_TIME_REGEX.test(date)) {
-    return from(`${toIsoShape(date)}[${zone}]`)
-  }
-  return null
+  return parsed === null ? null : toExifIso(parsed)
 }
 
 // ------------------------------------------------------------------ the tests
