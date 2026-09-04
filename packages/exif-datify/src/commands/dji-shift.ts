@@ -1,6 +1,7 @@
 import {Args, Command, Flags} from '@oclif/core'
 import {EXIF_DATE_TIME_FORMAT_WITH_TZ, updateTime} from '../lib/utils.ts'
 import {durationToSeconds} from '../lib/duration.ts'
+import {DIFFERENCE_THRESHOLD_SECONDS, hourDifference} from '../lib/hourShift.ts'
 import nodePath from 'node:path'
 import fs from 'node:fs'
 import {DateTime} from 'luxon'
@@ -11,8 +12,6 @@ import {
   defaultProgressLogger,
   walkFiles,
 } from '@hwaterke/file-utils'
-
-const DIFFERENCE_THRESHOLD_SECONDS = 45
 
 /**
  * Fixes time of all files in a directory shifted by one or two hours.
@@ -124,25 +123,12 @@ export default class DjiShiftCommand extends Command {
         this.log(`Duration: ${duration}`)
         this.log(`Duration seconds: ${durationSeconds}`)
 
-        const MS_IN_HOUR = 3_600_000
-
         // Check the difference between file time and exif time
-        const msFileMetadataDifference =
-          luxonMetadataTime.toMillis() -
-          (luxonFileTime.toMillis() - durationSeconds * 1000)
-        const exactHourDifference = msFileMetadataDifference / MS_IN_HOUR
-        const roundHourDifference = Math.round(exactHourDifference)
-
-        const nearestHourInMs = roundHourDifference * MS_IN_HOUR
-        const secondsRemaining =
-          Math.abs(nearestHourInMs - msFileMetadataDifference) / 1000
-
-        // Check if the difference is too large
-        if (secondsRemaining > DIFFERENCE_THRESHOLD_SECONDS) {
-          throw new Error(
-            `Difference is too large: ${secondsRemaining} seconds. Please check the file time manually.`
-          )
-        }
+        const roundHourDifference = hourDifference({
+          metadataTimeMs: luxonMetadataTime.toMillis(),
+          fileTimeMs: luxonFileTime.toMillis(),
+          durationSeconds,
+        })
 
         // Compute the correct time
         const correctDateTime = luxonMetadataTime.minus({
@@ -197,15 +183,6 @@ export default class DjiShiftCommand extends Command {
             `Classic DJI issue. The metadata time is ${roundHourDifference} hours behind of the file time.`
           )
         }
-
-        // console.log({
-        //   msFileMetadataDifference,
-        //   exactHourDifference,
-        //   secondDifference: msFileMetadataDifference / 1000,
-        //   minuteDifference: msFileMetadataDifference / 1000 / 60,
-        //   roundHourDifference,
-        //   secondsRemaining,
-        // })
 
         await updateTime({
           path: entry,
