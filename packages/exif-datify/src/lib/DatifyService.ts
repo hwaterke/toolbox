@@ -1,10 +1,11 @@
 import {ensureFile} from '@hwaterke/file-utils'
-import {DateTime} from 'luxon'
+import type {Temporal} from 'temporal-polyfill'
 import * as nodePath from 'node:path'
 import chalk from 'chalk'
 import {constants} from 'node:fs'
 import {access, opendir, rename} from 'node:fs/promises'
 import {ExiftoolService} from '@hwaterke/media-probe'
+import {formatDateTime} from './format.ts'
 import {Logger} from './Logger.ts'
 
 export type DatifyConfig = {
@@ -19,7 +20,7 @@ export type DatifyConfig = {
 
 export class DatifyService {
   exiftoolService = new ExiftoolService({logger: Logger})
-  liveVideoCache: Record<string, DateTime | null> = {}
+  liveVideoCache: Record<string, Temporal.ZonedDateTime | null> = {}
 
   private config: DatifyConfig
 
@@ -37,19 +38,13 @@ export class DatifyService {
       ? this.liveVideoCache[livePhotoTargetUuid]
       : null
 
-    const isoDateTimeFromExif = this.exiftoolService.extractDateTimeFromExif({
+    const dateTimeFromExif = this.exiftoolService.extractDateTimeFromExif({
       metadata,
       timeZone: this.config.timeZone,
       fileTimeFallback: this.config.fileTimeFallback,
     })
 
-    const when =
-      livePhotoWhen ??
-      (isoDateTimeFromExif?.iso
-        ? DateTime.fromISO(isoDateTimeFromExif.iso, {
-            setZone: true,
-          })
-        : null)
+    const when = livePhotoWhen ?? dateTimeFromExif?.when ?? null
 
     // If it is an Apple photo. Store the time of the photo to be reused when prefixing the related live video.
     const livePhotoUuid =
@@ -96,11 +91,11 @@ export class DatifyService {
 
   private async prefixFileWithDate(
     path: string,
-    date: DateTime,
+    date: Temporal.ZonedDateTime,
     infix: string | null
   ) {
     const current = nodePath.resolve(path)
-    const prefix = `${date.toFormat(this.config.prefix)}${infix ?? ''}`
+    const prefix = `${formatDateTime(date, this.config.prefix)}${infix ?? ''}`
 
     // Ignore the file if it is already prefixed
     if (nodePath.basename(path).startsWith(prefix)) {
@@ -156,7 +151,7 @@ export class DatifyService {
 
   private async renameSrtFile(
     originalFile: string,
-    date: DateTime,
+    date: Temporal.ZonedDateTime,
     infix: string | null
   ) {
     const srtFiles = await this.findSrtFiles(originalFile)

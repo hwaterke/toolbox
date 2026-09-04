@@ -2,6 +2,7 @@ import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest'
 import {mkdtemp, readdir, realpath, rm, writeFile} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import nodePath from 'node:path'
+import {Temporal} from 'temporal-polyfill'
 import {DatifyService, type DatifyConfig} from '../src/lib/DatifyService.ts'
 
 /**
@@ -34,6 +35,12 @@ const touch = async (name: string): Promise<string> => {
 
 const listing = async (): Promise<string[]> => (await readdir(root)).sort()
 
+/** Temporal needs an explicit `[zone]`, so the ISO offset is repeated as one. */
+const zoned = (iso: string): Temporal.ZonedDateTime =>
+  Temporal.ZonedDateTime.from(
+    iso.endsWith('Z') ? `${iso}[UTC]` : `${iso}[${iso.slice(-6)}]`
+  )
+
 type Stub = {
   /** What `extractDateTimeFromExif` hands back, or null for "no date". */
   iso: string | null
@@ -61,7 +68,12 @@ const serviceFor = (
   vi.spyOn(service.exiftoolService, 'extractDateTimeFromExif').mockReturnValue(
     stub.iso === null
       ? null
-      : {source: 'EXIF:DateTimeOriginal', raw: stub.iso, iso: stub.iso}
+      : {
+          source: 'EXIF:DateTimeOriginal',
+          raw: stub.iso,
+          iso: stub.iso,
+          when: zoned(stub.iso),
+        }
   )
   vi.spyOn(
     service.exiftoolService,
@@ -98,6 +110,27 @@ describe('DatifyService prefixing', () => {
       await serviceFor({}, {iso}).processFile(path)
 
       expect(await listing()).toEqual([expected])
+    })
+
+    // The prefix is built from `when`, the object the probe already parsed,
+    // not from re-reading its `iso` string. A stub whose two fields disagree
+    // is the only thing that can tell those apart.
+    test('the prefix comes from `when`, not from `iso`', async () => {
+      const path = await touch('shot.JPG')
+      const service = serviceFor({}, {iso: '2024-04-06T18:51:45.760+02:00'})
+      vi.spyOn(
+        service.exiftoolService,
+        'extractDateTimeFromExif'
+      ).mockReturnValue({
+        source: 'EXIF:DateTimeOriginal',
+        raw: '2024-04-06 18:51:45',
+        iso: '2024-04-06T18:51:45.760+02:00',
+        when: zoned('1999-09-09T09:09:09.000+02:00'),
+      })
+
+      await service.processFile(path)
+
+      expect(await listing()).toEqual(['1999-09-09_09-09-09_shot.JPG'])
     })
 
     test.for([
@@ -258,6 +291,7 @@ describe('DatifyService prefixing', () => {
         source: 'EXIF:DateTimeOriginal',
         raw: '2024-04-06T18:51:45.760+02:00',
         iso: '2024-04-06T18:51:45.760+02:00',
+        when: zoned('2024-04-06T18:51:45.760+02:00'),
       })
       vi.spyOn(
         service.exiftoolService,
@@ -277,6 +311,7 @@ describe('DatifyService prefixing', () => {
         source: 'EXIF:DateTimeOriginal',
         raw: '1999-09-09T09:09:09.000+02:00',
         iso: '1999-09-09T09:09:09.000+02:00',
+        when: zoned('1999-09-09T09:09:09.000+02:00'),
       })
       vi.spyOn(
         service.exiftoolService,
