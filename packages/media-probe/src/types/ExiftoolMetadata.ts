@@ -3,6 +3,7 @@ export const EXIF_TAGS = {
   FILE_MODIFICATION_DATE: 'File:System:FileModifyDate',
   DATE_TIME_ORIGINAL: 'EXIF:ExifIFD:DateTimeOriginal',
   SUB_SEC_TIME: 'EXIF:ExifIFD:SubSecTime',
+  SUB_SEC_TIME_ORIGINAL: 'EXIF:ExifIFD:SubSecTimeOriginal',
   QUICKTIME_CREATE_DATE: 'QuickTime:CreateDate',
   QUICKTIME_CREATION_DATE: 'QuickTime:Keys:CreationDate',
   SUB_SEC_DATE_TIME_ORIGINAL: 'Composite:SubSecDateTimeOriginal',
@@ -53,6 +54,11 @@ export type ExiftoolMetadata = {
   [EXIF_TAGS.EXIF_OFFSET_TIME_ORIGINAL]?: string
   [EXIF_TAGS.EXIF_OFFSET_TIME_DIGITIZED]?: string
   [EXIF_TAGS.XMP_CREATE_DATE]?: string
+  // A digit string, not a number: GoPro's `0461` has a significant leading
+  // zero. exiftool only reports a number when the value happens to parse as
+  // one, so never coerce this - copy the digits verbatim.
+  [EXIF_TAGS.SUB_SEC_TIME]?: string | number
+  [EXIF_TAGS.SUB_SEC_TIME_ORIGINAL]?: string | number
   [EXIF_TAGS.QUICKTIME_DURATION]?: string
   [EXIF_TAGS.NIKON_TIME_ZONE]?: string
   [EXIF_TAGS.NIKON_DAYLIGHT_SAVINGS]?: string
