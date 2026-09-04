@@ -1,20 +1,22 @@
-import {beforeAll, describe, expect, test} from 'vitest'
-import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs'
+import {describe, expect, test} from 'vitest'
+import {readFileSync} from 'node:fs'
 import nodePath from 'node:path'
-import {DateTime} from 'luxon'
 import {Temporal} from 'temporal-polyfill'
 import {ExiftoolService, toExifIso} from '../src/ExiftoolService.ts'
 
 /**
- * TEMPORARY (deleted in step 3.1 of LUXON-TO-TEMPORAL.md).
+ * Pins the EXIF parse layer to a generated corpus - every shape the six
+ * regexes accept, crossed with a spread of dates and zones, plus strings they
+ * must reject.
  *
- * Runs the luxon parse layer and a Temporal replacement side by side over a
- * generated corpus - every EXIF shape the six regexes accept, crossed with a
- * spread of dates and zones - and asserts the two agree on every one.
+ * The expected answers live in `test/fixtures/parse-corpus.json`. They were
+ * produced by running luxon and Temporal side by side during the migration
+ * away from luxon; every entry the two libraries agreed on is an unchanged
+ * behaviour, and the handful carrying a `luxon` field are the deliberate
+ * changes, listed again in `differ only on repeated wall clocks` below.
  *
- * The agreed answers are frozen into `test/fixtures/parse-corpus.json`, which
- * outlives this file: once luxon is gone the frozen corpus is what keeps the
- * Temporal implementation honest.
+ * The file is frozen. Do not regenerate it to make a failure go away - a diff
+ * here is a behaviour change, and it needs a reason.
  */
 
 const SNAPSHOT_PATH = nodePath.join(
@@ -130,74 +132,10 @@ const buildCorpus = (): Case[] => {
   return cases
 }
 
-// ------------------------------------------------------------ the two parsers
+// ------------------------------------------------------------- the parse call
 
 const service = new ExiftoolService({})
 
-const EXIF_DATE_TIME_REGEX = /^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}$/
-const EXIF_DATE_TIME_WITH_TZ_REGEX =
-  /^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/
-const EXIF_DATE_TIME_WITH_UTC_REGEX = /^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}Z$/
-const EXIF_DATE_TIME_SUBSEC_REGEX =
-  /^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}\.\d{2}$/
-const EXIF_DATE_TIME_SUBSEC2_WITH_TZ_REGEX =
-  /^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}\.\d{2}[+-]\d{2}:\d{2}$/
-const EXIF_DATE_TIME_SUBSEC3_WITH_TZ_REGEX =
-  /^\d{4}:\d{2}:\d{2} \d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/
-
-/**
- * What shipped before this migration, kept here verbatim so the two libraries
- * can still be run side by side. Deleted with this file.
- */
-const EXIF_DATE_TIME_FORMAT = 'yyyy:MM:dd HH:mm:ss'
-const EXIF_DATE_TIME_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ssZZ'
-const EXIF_DATE_TIME_SUBSEC_FORMAT = 'yyyy:MM:dd HH:mm:ss.uu'
-const EXIF_DATE_TIME_SUBSEC2_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ss.uuZZ'
-const EXIF_DATE_TIME_SUBSEC3_FORMAT_WITH_TZ = 'yyyy:MM:dd HH:mm:ss.SSSZZ'
-
-const parseWithLuxon = (testCase: Case): string | null => {
-  const {date} = testCase
-  const fallbackTimeZone = testCase.zone
-
-  const parsed = ((): DateTime | null => {
-    if (EXIF_DATE_TIME_SUBSEC3_WITH_TZ_REGEX.test(date)) {
-      return DateTime.fromFormat(date, EXIF_DATE_TIME_SUBSEC3_FORMAT_WITH_TZ, {
-        setZone: true,
-      })
-    }
-    if (EXIF_DATE_TIME_SUBSEC2_WITH_TZ_REGEX.test(date)) {
-      return DateTime.fromFormat(date, EXIF_DATE_TIME_SUBSEC2_FORMAT_WITH_TZ, {
-        setZone: true,
-      })
-    }
-    if (EXIF_DATE_TIME_SUBSEC_REGEX.test(date)) {
-      return DateTime.fromFormat(date, EXIF_DATE_TIME_SUBSEC_FORMAT, {
-        zone: fallbackTimeZone,
-      })
-    }
-    if (EXIF_DATE_TIME_WITH_TZ_REGEX.test(date)) {
-      return DateTime.fromFormat(date, EXIF_DATE_TIME_FORMAT_WITH_TZ, {
-        setZone: true,
-      })
-    }
-    if (EXIF_DATE_TIME_WITH_UTC_REGEX.test(date)) {
-      // Remove Z at the end of the string
-      return DateTime.fromFormat(date.slice(0, -1), EXIF_DATE_TIME_FORMAT, {
-        zone: 'utc',
-      })
-    }
-    if (EXIF_DATE_TIME_REGEX.test(date)) {
-      return DateTime.fromFormat(date, EXIF_DATE_TIME_FORMAT, {
-        zone: fallbackTimeZone,
-      })
-    }
-    return null
-  })()
-
-  return parsed && parsed.isValid ? parsed.toISO() : null
-}
-
-/** What ships now: the parse layer inside `ExiftoolService`. */
 const parseWithTemporal = (testCase: Case): string | null => {
   const parsed = (
     service as unknown as {
@@ -214,9 +152,9 @@ const parseWithTemporal = (testCase: Case): string | null => {
 // ------------------------------------------------------------------ the tests
 
 /**
- * One corpus entry. `iso` is the answer going forward - Temporal's. `luxon`
- * is filled in only where the old library answered differently, so the file
- * lists every deliberate behaviour change in one place.
+ * One corpus entry. `iso` is what the parse layer must return. `luxon` is
+ * filled in only where the library this code replaced answered differently,
+ * so the file lists every deliberate behaviour change in one place.
  */
 type Frozen = {
   date: string
@@ -226,26 +164,7 @@ type Frozen = {
 }
 
 const CORPUS = buildCorpus()
-
-let frozen: Frozen[]
-
-beforeAll(() => {
-  if (!existsSync(SNAPSHOT_PATH)) {
-    mkdirSync(nodePath.dirname(SNAPSHOT_PATH), {recursive: true})
-    const generated: Frozen[] = CORPUS.map((testCase) => {
-      const temporal = parseWithTemporal(testCase)
-      const luxon = parseWithLuxon(testCase)
-      return {
-        date: testCase.date,
-        zone: testCase.zone ?? null,
-        iso: temporal,
-        ...(luxon === temporal ? {} : {luxon}),
-      }
-    })
-    writeFileSync(SNAPSHOT_PATH, `${JSON.stringify(generated, null, 2)}\n`)
-  }
-  frozen = JSON.parse(readFileSync(SNAPSHOT_PATH, 'utf8'))
-})
+const FROZEN: Frozen[] = JSON.parse(readFileSync(SNAPSHOT_PATH, 'utf8'))
 
 describe('the parse corpus', () => {
   test('the machine zone is pinned, so the corpus is reproducible', () => {
@@ -267,25 +186,25 @@ describe('the parse corpus', () => {
   })
 
   test('the frozen file still lines up with the generated corpus', () => {
-    expect(frozen.length).toBe(CORPUS.length)
-    expect(frozen.map((entry) => entry.date)).toEqual(
+    expect(FROZEN.length).toBe(CORPUS.length)
+    expect(FROZEN.map((entry) => entry.date)).toEqual(
       CORPUS.map((testCase) => testCase.date)
     )
-    expect(frozen.map((entry) => entry.zone)).toEqual(
+    expect(FROZEN.map((entry) => entry.zone)).toEqual(
       CORPUS.map((testCase) => testCase.zone ?? null)
     )
   })
 
   // A corpus that parsed nothing would pass every other test here.
   test('most of the corpus actually parses', () => {
-    const parsed = frozen.filter((entry) => entry.iso !== null)
+    const parsed = FROZEN.filter((entry) => entry.iso !== null)
     expect(parsed.length).toBeGreaterThan(CORPUS.length * 0.9)
   })
 
   test('the shapes that should be rejected all are', () => {
     const rejected = CORPUS.map((testCase, index) => ({
       testCase,
-      iso: frozen[index]!.iso,
+      iso: FROZEN[index]!.iso,
     })).filter(({testCase}) => testCase.shape === 'rejected')
 
     expect(rejected.length).toBeGreaterThan(0)
@@ -295,41 +214,32 @@ describe('the parse corpus', () => {
   })
 })
 
-describe('luxon and Temporal', () => {
-  test('agree on every case the frozen file does not flag', () => {
-    const unflagged = CORPUS.filter((_, index) => !('luxon' in frozen[index]!))
+describe('the frozen answers', () => {
+  test('the parse layer produces them', () => {
+    const actual = CORPUS.map(parseWithTemporal)
+    expect(actual).toEqual(FROZEN.map((entry) => entry.iso))
+  })
 
-    const disagreements = unflagged
-      .map((testCase) => ({
-        date: testCase.date,
-        zone: testCase.zone,
-        luxon: parseWithLuxon(testCase),
-        temporal: parseWithTemporal(testCase),
-      }))
-      .filter((entry) => entry.luxon !== entry.temporal)
-
-    expect(disagreements).toEqual([])
+  test('almost none of the corpus is flagged as a behaviour change', () => {
+    const unflagged = FROZEN.filter((entry) => !('luxon' in entry))
     expect(unflagged.length).toBeGreaterThan(CORPUS.length * 0.9)
   })
 
   /**
    * The one accepted behaviour change. When a wall clock happens twice - the
-   * hour DST gives back - Temporal takes the first occurrence. luxon takes
+   * hour DST gives back - Temporal takes the first occurrence. luxon took
    * the second, but only in zones far enough east that its guess-and-correct
-   * maths lands on the far side of the transition; Europe and the Americas
-   * come out the same. The wall clock is identical either way, so filenames
+   * maths landed on the far side of the transition; Europe and the Americas
+   * came out the same. The wall clock is identical either way, so filenames
    * do not move; only the offset written into EXIF does.
    */
-  test('differ only on repeated wall clocks in far-east zones', () => {
-    const flagged = CORPUS.map((testCase, index) => ({
-      testCase,
-      entry: frozen[index]!,
-    })).filter(({entry}) => 'luxon' in entry)
+  test('differ from luxon only on repeated wall clocks in far-east zones', () => {
+    const flagged = FROZEN.filter((entry) => 'luxon' in entry)
 
     expect(
-      flagged.map(({testCase, entry}) => ({
-        date: testCase.date,
-        zone: testCase.zone ?? null,
+      flagged.map((entry) => ({
+        date: entry.date,
+        zone: entry.zone,
         luxon: entry.luxon,
         temporal: entry.iso,
       }))
@@ -367,19 +277,5 @@ describe('luxon and Temporal', () => {
         },
       ]
     `)
-  })
-})
-
-describe('the frozen answers', () => {
-  test('Temporal produces them', () => {
-    const actual = CORPUS.map(parseWithTemporal)
-    expect(actual).toEqual(frozen.map((entry) => entry.iso))
-  })
-
-  test('luxon produces them wherever it is not flagged as differing', () => {
-    const expected = frozen.map((entry) =>
-      'luxon' in entry ? entry.luxon : entry.iso
-    )
-    expect(CORPUS.map(parseWithLuxon)).toEqual(expected)
   })
 })

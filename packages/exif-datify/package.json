@@ -33,10 +33,6 @@
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
     "chalk": "^5",
-    "luxon": "^3",
     "temporal-polyfill": "catalog:"
-  },
-  "devDependencies": {
-    "@types/luxon": "^3"
   }
 }
