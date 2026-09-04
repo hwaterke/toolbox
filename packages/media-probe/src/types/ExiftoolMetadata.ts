@@ -2,6 +2,7 @@ export const EXIF_TAGS = {
   // Date and time tags
   FILE_MODIFICATION_DATE: 'File:System:FileModifyDate',
   DATE_TIME_ORIGINAL: 'EXIF:ExifIFD:DateTimeOriginal',
+  EXIF_CREATE_DATE: 'EXIF:ExifIFD:CreateDate',
   SUB_SEC_TIME: 'EXIF:ExifIFD:SubSecTime',
   SUB_SEC_TIME_ORIGINAL: 'EXIF:ExifIFD:SubSecTimeOriginal',
   QUICKTIME_CREATE_DATE: 'QuickTime:CreateDate',
@@ -43,6 +44,7 @@ export const EXIF_TAGS = {
 export type ExiftoolMetadata = {
   [EXIF_TAGS.FILE_MODIFICATION_DATE]?: string
   [EXIF_TAGS.DATE_TIME_ORIGINAL]?: string
+  [EXIF_TAGS.EXIF_CREATE_DATE]?: string
   [EXIF_TAGS.QUICKTIME_CREATE_DATE]?: string
   [EXIF_TAGS.QUICKTIME_CREATION_DATE]?: string
   [EXIF_TAGS.LIVE_PHOTO_UUID_PHOTO_MEDIA_GROUP]?: string
