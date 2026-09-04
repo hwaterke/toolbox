@@ -16,7 +16,8 @@ export default class StripCommand extends Command {
     }),
     prefix: Flags.string({
       char: 'p',
-      description: 'Format used for the prefix, see luxon documentation',
+      description:
+        'format for the date prefix. Tokens: yyyy MM dd HH mm ss SSS uu ZZ. Anything else is literal',
       default: 'yyyy-MM-dd_HH-mm-ss_',
     }),
     recursive: Flags.boolean({

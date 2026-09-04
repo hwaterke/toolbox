@@ -242,7 +242,8 @@ FLAGS
   -b, --skipBasename        skip the basename of the file
   -d, --dryRun              show how files would be renamed without doing it
   -e, --extensions=<value>  which file extensions to process (comma separated) e.g. (mov,mp4,jpg)
-  -p, --prefix=<value>      [default: yyyy-MM-dd_HH-mm-ss_] Format used for the prefix, see luxon documentation
+  -p, --prefix=<value>      [default: yyyy-MM-dd_HH-mm-ss_] format for the date prefix. Tokens: yyyy MM dd HH mm ss SSS
+                            uu ZZ. Anything else is literal
   -r, --recursive           process directories recursively
   -t, --time                fallback to the time of the file when no date and time is found
   -z, --zone=<value>        which IANA time zone to use for the date and time information found in UTC (default is local
