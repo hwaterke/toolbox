@@ -167,7 +167,10 @@ const ignored = (reason: string): Plan => ({
 
 /**
  * The sub-second digits, copied verbatim. Never rebuilt from a parsed date:
- * Luxon truncates to milliseconds, which turns GoPro's `0461` into `04`.
+ * the tag holds a decimal fraction of arbitrary length, and its digit count is
+ * part of what the camera wrote. Rebuilding would normalise it - `54` (540 ms)
+ * would come back as `540`, and GoPro's `0461` as `046` - so the value written
+ * back would no longer match the value read.
  */
 const subSecondSuffix = (metadata: ExiftoolMetadata): string => {
   const subSecond = metadata[EXIF_TAGS.SUB_SEC_TIME_ORIGINAL]
