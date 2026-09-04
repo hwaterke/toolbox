@@ -1,5 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 import {EXIF_DATE_TIME_FORMAT_WITH_TZ, updateTime} from '../lib/utils.ts'
+import {durationToSeconds} from '../lib/duration.ts'
 import nodePath from 'node:path'
 import fs from 'node:fs'
 import {DateTime} from 'luxon'
@@ -12,20 +13,6 @@ import {
 } from '@hwaterke/file-utils'
 
 const DIFFERENCE_THRESHOLD_SECONDS = 45
-
-function durationToSeconds(duration: string) {
-  if (duration.match(/^(\d{1,2}):(\d{2}):(\d{2})$/)) {
-    const [hours, minutes, seconds] = duration.split(':').map(Number)
-    return Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds)
-  }
-
-  const result = duration.match(/^(\d{1,2})\.(\d{2}) s$/)
-  if (result?.[1] !== undefined && result[2] !== undefined) {
-    return Number(result[1]) + Number(result[2]) / 1000
-  }
-
-  throw new Error(`Invalid duration format ${duration}`)
-}
 
 /**
  * Fixes time of all files in a directory shifted by one or two hours.
