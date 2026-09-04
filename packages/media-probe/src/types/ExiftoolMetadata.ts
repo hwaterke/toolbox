@@ -10,6 +10,13 @@ export const EXIF_TAGS = {
   EXIF_OFFSET_TIME: 'EXIF:ExifIFD:OffsetTime',
   EXIF_OFFSET_TIME_ORIGINAL: 'EXIF:ExifIFD:OffsetTimeOriginal',
   EXIF_OFFSET_TIME_DIGITIZED: 'EXIF:ExifIFD:OffsetTimeDigitized',
+  XMP_CREATE_DATE: 'XMP:XMP-xmp:CreateDate',
+  QUICKTIME_DURATION: 'QuickTime:Duration',
+
+  // Nikon stores the *base* zone offset here, with DST excluded. The true
+  // offset is this value plus an hour when DaylightSavings is 'Yes'.
+  NIKON_TIME_ZONE: 'MakerNotes:Nikon:TimeZone',
+  NIKON_DAYLIGHT_SAVINGS: 'MakerNotes:Nikon:DaylightSavings',
 
   // Apple Live Photo. Old tag on the photo file that contains the UUID of the photo that is part of the live photo.
   LIVE_PHOTO_UUID_PHOTO_MEDIA_GROUP: 'MakerNotes:Apple:MediaGroupUUID',
@@ -45,6 +52,10 @@ export type ExiftoolMetadata = {
   [EXIF_TAGS.EXIF_OFFSET_TIME]?: string
   [EXIF_TAGS.EXIF_OFFSET_TIME_ORIGINAL]?: string
   [EXIF_TAGS.EXIF_OFFSET_TIME_DIGITIZED]?: string
+  [EXIF_TAGS.XMP_CREATE_DATE]?: string
+  [EXIF_TAGS.QUICKTIME_DURATION]?: string
+  [EXIF_TAGS.NIKON_TIME_ZONE]?: string
+  [EXIF_TAGS.NIKON_DAYLIGHT_SAVINGS]?: string
   [EXIF_TAGS.ORIENTATION]?: string
   [EXIF_TAGS.COMPOSITE_MEGAPIXELS]?: number
   [EXIF_TAGS.EXIF_MAKE]?: string

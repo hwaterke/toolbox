@@ -86,7 +86,7 @@ export default class NikonFixCommand extends Command {
         // Get metadata
         const metadata = await exifService.extractExifMetadata(entry)
 
-        const make = metadata['EXIF:IFD0:Make']
+        const make = metadata[EXIF_TAGS.EXIF_MAKE]
         // Stop if the file is not a Nikon file
         if (!make || make !== 'NIKON CORPORATION') {
           Logger.debug(`Skipping file - Not a Nikon file`)
@@ -105,9 +105,9 @@ export default class NikonFixCommand extends Command {
         }
 
         // Check Maker Offset and Offset
-        const offset = metadata['EXIF:ExifIFD:OffsetTimeOriginal']
-        const nikonTimeZone = metadata['MakerNotes:Nikon:TimeZone']
-        const daylightSavings = metadata['MakerNotes:Nikon:DaylightSavings']
+        const offset = metadata[EXIF_TAGS.EXIF_OFFSET_TIME_ORIGINAL]
+        const nikonTimeZone = metadata[EXIF_TAGS.NIKON_TIME_ZONE]
+        const daylightSavings = metadata[EXIF_TAGS.NIKON_DAYLIGHT_SAVINGS]
 
         if (!offset) {
           Logger.info(`${entry} No offset`)
@@ -117,7 +117,7 @@ export default class NikonFixCommand extends Command {
 
         if (daylightSavings === 'Yes') {
           if (offset === nikonTimeZone) {
-            const newOffset = subtractOneHour(offset as string)
+            const newOffset = subtractOneHour(offset)
             Logger.info(
               `${entry} Incorrect daylight saving offset: Offset:${offset} Nikon:${nikonTimeZone}. Should be ${newOffset}`
             )

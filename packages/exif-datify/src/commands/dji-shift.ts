@@ -91,7 +91,7 @@ export default class DjiShiftCommand extends Command {
         )
 
         // Extract the duration
-        const duration = metadata['QuickTime:Duration'] as string | undefined
+        const duration = metadata[EXIF_TAGS.QUICKTIME_DURATION]
         const durationSeconds = duration ? durationToSeconds(duration) : 0
 
         // Extract the metadata time
