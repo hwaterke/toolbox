@@ -30,8 +30,8 @@
   "dependencies": {
     "@hwaterke/file-utils": "workspace:*",
     "@hwaterke/media-probe": "workspace:*",
-    "@oclif/core": "^4",
-    "@oclif/plugin-help": "^6",
+    "@oclif/core": "catalog:",
+    "@oclif/plugin-help": "catalog:",
     "chalk": "^5",
     "temporal-polyfill": "catalog:"
   }

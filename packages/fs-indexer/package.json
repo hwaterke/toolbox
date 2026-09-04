@@ -31,8 +31,8 @@
     "@hwaterke/file-utils": "workspace:*",
     "@hwaterke/media-probe": "workspace:*",
     "@libsql/client": "^0.15.10",
-    "@oclif/core": "^4",
-    "@oclif/plugin-help": "^6",
+    "@oclif/core": "catalog:",
+    "@oclif/plugin-help": "catalog:",
     "@paralleldrive/cuid2": "^2.2.2",
     "drizzle-orm": "^0.44.4",
     "ora": "^8.2.0",
@@ -41,7 +41,7 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
-    "@oclif/test": "^5.0.0",
+    "@oclif/test": "catalog:",
     "drizzle-kit": "^0.31.4"
   }
 }
