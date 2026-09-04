@@ -3,44 +3,16 @@
 ## Doctor command
 
 - Fix time shift of DJI videos
-- TZ in photos
-  - Add the TZ tag to the file
-  - Do a setAllTime with the TZ tag to update
-- Gopro videos: Set all time to the createdate with tz of +2 + add the
-  creationdate as well with TZ!
 
-## Time zones
+## exif-datify follow-ups
 
-- Photos have an exif field to store the TZ offset
-- QuickTime CreationDate contains the TZ offset for videos
-
-We can get the offset from the IANA name (when provided through command line)
-
-```typescript
-const luxonTime = DateTime.fromFormat(
-  quicktimeTime,
-  EXIF_DATE_TIME_FORMAT_WITH_TZ,
-  {zone: 'Europe/Lisbon'}
-)
-
-const correctTimeString = luxonTime.toFormat(EXIF_DATE_TIME_FORMAT_WITH_TZ)
-```
-
-For photos
-
-```typescript
-exifService.setTimezoneOffsets()
-exifService.setAllTime()
-```
-
-There seems to be something to do with the sub sec as well
-
-```typescript
-// Set subsec
-const subSec = metadata['EXIF:ExifIFD:SubSecTime']
-if (typeof subSec === 'number') {
-  await exifService.exiftool(
-    `-overwrite_original -P -SubSecTime=${subSec} -SubSecTimeOriginal=${subSec} -SubSecTimeDigitized=${subSec} "${entry}"`
-  )
-}
-```
+- Speed: run exiftool with `-stay_open` instead of one process per file, and/or
+  process files concurrently. Deliberately left out of the nikon/gopro pass so
+  the tests landed first.
+- GoPro `--verify-gps`: cross-check the `--zone` the user passed against the
+  GPS/UTC timestamps in the telemetry. Costly, because `exiftool -ee` reads the
+  whole video file.
+- Migrate off Luxon to Temporal (`temporal-polyfill`). Temporal carries
+  nanosecond precision, which removes the millisecond-truncation hazard Luxon
+  has with sub-second EXIF values. The "copy the sub-second digits verbatim"
+  rule stays correct either way, so nothing needs redoing after the migration.
