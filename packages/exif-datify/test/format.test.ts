@@ -53,7 +53,8 @@ describe('formatDateTime', () => {
     })
   })
 
-  // T7 in LUXON-TO-TEMPORAL.md: luxon truncated, so this must too.
+  // Truncating is what luxon's `uu` did, and the prefixes it wrote are on
+  // disk already, so rounding here would rename files that never moved.
   describe('the uu sub-second token truncates, it does not round', () => {
     test.each([
       [0, '00'],

@@ -3,9 +3,10 @@ import {Temporal} from 'temporal-polyfill'
 import {parseUserDateTime} from '../src/lib/exifTime.ts'
 
 /**
- * What `set-date -t` accepts. Temporal refuses a bare offset ISO on its own
- * (T1 in LUXON-TO-TEMPORAL.md), so these record that the command still takes
- * everything a user could reasonably type.
+ * What `set-date -t` accepts. `Temporal.ZonedDateTime.from` refuses a bare
+ * offset ISO - it wants a `[zone]` bracket, so `2024-04-03T10:01:22+02:00`
+ * throws until `[+02:00]` is appended. These record that the command still
+ * takes everything a user could reasonably type.
  */
 
 const local = Temporal.Now.timeZoneId()
