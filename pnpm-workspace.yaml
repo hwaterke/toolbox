@@ -1,6 +1,9 @@
 packages:
   - 'packages/*'
 
+catalog:
+  temporal-polyfill: ^1.0.4
+
 # esbuild ships a platform binary; vitest cannot run without it.
 allowBuilds:
   esbuild: true
