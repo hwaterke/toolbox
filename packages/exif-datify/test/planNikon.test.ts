@@ -30,7 +30,7 @@ describe('planNikon', () => {
   describe('files it will not touch', () => {
     test('skips an unsupported extension', () => {
       expect(planNikon(fromCamera(), {path: 'DSC_0001.MOV'})).toEqual({
-        verdict: 'skipped',
+        verdict: 'ignored',
         reason: 'unsupported extension .MOV',
         writes: [],
       })
@@ -39,7 +39,7 @@ describe('planNikon', () => {
     test('skips a file from another maker', () => {
       const metadata = fromCamera({[EXIF_TAGS.EXIF_MAKE]: 'Canon'})
       expect(planNikon(metadata, {path: JPG})).toMatchObject({
-        verdict: 'skipped',
+        verdict: 'ignored',
         reason: 'not a Nikon file',
       })
     })

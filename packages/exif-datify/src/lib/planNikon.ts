@@ -7,6 +7,55 @@ import {DateTime, FixedOffsetZone} from 'luxon'
 import nodePath from 'node:path'
 import type {Plan} from './plan.ts'
 
+/*
+Example Nikon metadata (straight out of the camera):
+
+exiftool -Time:All -G0:1 -json DSC_0352.JPG
+[{
+  "SourceFile": "DSC_0352.JPG",
+  "File:System:FileModifyDate": "2025:05:09 09:18:14+02:00",
+  "File:System:FileAccessDate": "2025:05:09 09:18:14+02:00",
+  "File:System:FileInodeChangeDate": "2025:05:09 09:18:14+02:00",
+  "EXIF:IFD0:ModifyDate": "2025:05:09 09:18:14",
+  "EXIF:ExifIFD:DateTimeOriginal": "2025:05:09 09:18:14",
+  "EXIF:ExifIFD:CreateDate": "2025:05:09 09:18:14",
+  "MakerNotes:Nikon:TimeZone": "+01:00",
+  "MakerNotes:Nikon:DaylightSavings": "Yes",
+  "MakerNotes:Nikon:DateDisplayFormat": "Y/M/D",
+  "MakerNotes:Nikon:PowerUpTime": "0000:00:00 00:00:00",
+  "EXIF:ExifIFD:SubSecTime": 54,
+  "EXIF:ExifIFD:SubSecTimeOriginal": 54,
+  "EXIF:ExifIFD:SubSecTimeDigitized": 54,
+  "XMP:XMP-xmp:CreateDate": "2025:05:09 09:18:14.54",
+  "Composite:SubSecCreateDate": "2025:05:09 09:18:14.54",
+  "Composite:SubSecDateTimeOriginal": "2025:05:09 09:18:14.54",
+  "Composite:SubSecModifyDate": "2025:05:09 09:18:14.54"
+}]
+
+exiftool -Time:All -G0:1 -json DSC_0352.NEF
+[{
+  "SourceFile": "DSC_0352.NEF",
+  "File:System:FileModifyDate": "2025:05:09 09:18:14+02:00",
+  "File:System:FileAccessDate": "2025:05:09 09:18:14+02:00",
+  "File:System:FileInodeChangeDate": "2025:05:09 09:18:14+02:00",
+  "EXIF:IFD0:ModifyDate": "2025:05:09 09:18:14",
+  "XMP:XMP-xmp:CreateDate": "2025:05:09 09:18:14.54",
+  "EXIF:ExifIFD:DateTimeOriginal": "2025:05:09 09:18:14",
+  "EXIF:ExifIFD:CreateDate": "2025:05:09 09:18:14",
+  "MakerNotes:Nikon:TimeZone": "+01:00",
+  "MakerNotes:Nikon:DaylightSavings": "Yes",
+  "MakerNotes:Nikon:DateDisplayFormat": "Y/M/D",
+  "MakerNotes:Nikon:PowerUpTime": "0000:00:00 00:00:00",
+  "EXIF:ExifIFD:SubSecTime": 54,
+  "EXIF:ExifIFD:SubSecTimeOriginal": 54,
+  "EXIF:ExifIFD:SubSecTimeDigitized": 54,
+  "EXIF:IFD0:DateTimeOriginal": "2025:05:09 09:18:14",
+  "Composite:SubSecCreateDate": "2025:05:09 09:18:14.54",
+  "Composite:SubSecDateTimeOriginal": "2025:05:09 09:18:14.54",
+  "Composite:SubSecModifyDate": "2025:05:09 09:18:14.54"
+}]
+*/
+
 const NIKON_MAKE = 'NIKON CORPORATION'
 const NIKON_EXTENSIONS = new Set(['.JPG', '.NEF'])
 const OFFSET_REGEX = /^([+-])(\d{2}):(\d{2})$/
@@ -111,6 +160,12 @@ const failed = (reason: string): Plan => ({
 
 const skipped = (reason: string): Plan => ({
   verdict: 'skipped',
+  reason,
+  writes: [],
+})
+
+const ignored = (reason: string): Plan => ({
+  verdict: 'ignored',
   reason,
   writes: [],
 })
@@ -254,11 +309,11 @@ export function planNikon(
 
   const extension = nodePath.extname(path).toUpperCase()
   if (!NIKON_EXTENSIONS.has(extension)) {
-    return skipped(`unsupported extension ${extension}`)
+    return ignored(`unsupported extension ${extension}`)
   }
 
   if (metadata[EXIF_TAGS.EXIF_MAKE] !== NIKON_MAKE) {
-    return skipped('not a Nikon file')
+    return ignored('not a Nikon file')
   }
 
   const clockTime = metadata[EXIF_TAGS.DATE_TIME_ORIGINAL]

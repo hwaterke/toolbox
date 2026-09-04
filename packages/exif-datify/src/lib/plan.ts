@@ -7,6 +7,12 @@
 export type PlanVerdict =
   /** The file already matches the target state. Nothing to write. */
   | 'ok'
+  /**
+   * Not a file this command owns - wrong extension, wrong camera. Counted, so
+   * nothing is dropped silently, but never listed: a mixed folder would drown
+   * the real findings.
+   */
+  | 'ignored'
   /** Tags are missing or wrong and can be written. */
   | 'written'
   /** Same as `written`, plus it undoes damage left by an older version. */
