@@ -80,9 +80,14 @@ const ok: Plan = {verdict: 'ok', reason: 'already correct', writes: []}
  *
  * The other tags are stored in UTC, per the MP4 spec, which is what
  * `-api QuickTimeUTC` does when handed a value with an offset. The camera
- * instead stores local time there, against the spec. That means the anchor's
- * presence is the *only* record of which convention a given file follows: once
- * it is gone the local value cannot be told apart from the UTC one (T1).
+ * instead stores local time there, against the spec.
+ *
+ * So the anchor's presence is the *only* record of which convention a file
+ * follows. Measured on a HERO8 Black: nothing else in the file - not the
+ * `QuickTime:GoPro:*` block, not `UserData`, not `MediaDataOffset` - says
+ * whether the stored dates are local or UTC, so a file whose anchor was
+ * stripped cannot be told apart from a camera-fresh one. Never strip the
+ * anchor, and never read its absence as anything but "camera fresh".
  */
 const planVideo = (
   metadata: ExiftoolMetadata,
@@ -143,8 +148,13 @@ const planVideo = (
 
   // `-api QuickTimeUTC` makes exiftool read the offset off each value and store
   // the UTC instant. Without it the offset is dropped and `Keys:CreationDate`
-  // is not written at all. Never add `-wm w` here: it forbids creating a tag,
-  // and the anchor is missing on exactly the files that need it most.
+  // is not written at all.
+  //
+  // Never add `-wm w` here. It forbids creating a tag that does not exist, and
+  // the anchor never exists on a fresh GoPro file - so the write is dropped
+  // while exiftool still reports `1 image files updated`. That is why the tag
+  // names above come from the file's own metadata: nothing here has to be
+  // created blind.
   return {
     verdict: halfWritten ? 'repaired' : 'written',
     reason: halfWritten
