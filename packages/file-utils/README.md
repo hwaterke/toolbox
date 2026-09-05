@@ -1,19 +1,14 @@
 # @hwaterke/file-utils
 
-Filesystem traversal and file-move helpers for Node, published on
-[JSR](https://jsr.io/@hwaterke/file-utils).
+Filesystem traversal and file-move helpers for Node.
 
 ## Installation
 
-```sh
-# Deno
-deno add jsr:@hwaterke/file-utils
+Not published. Inside this monorepo, depend on it as a workspace package:
 
-# Node (npm/pnpm/yarn)
-npx jsr add @hwaterke/file-utils
-
-# Bun
-bunx jsr add @hwaterke/file-utils
+```jsonc
+// packages/<pkg>/package.json
+"dependencies": {"@hwaterke/file-utils": "workspace:*"}
 ```
 
 ## Usage

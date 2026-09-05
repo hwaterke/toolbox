@@ -3,9 +3,6 @@
 CLI to rename files with date and time information from Exif data
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/exif-datify.svg)](https://npmjs.org/package/exif-datify)
-[![Downloads/week](https://img.shields.io/npm/dw/exif-datify.svg)](https://npmjs.org/package/exif-datify)
-[![License](https://img.shields.io/npm/l/exif-datify.svg)](https://github.com/hwaterke/exif-datify/blob/master/package.json)
 
 <!-- toc -->
 
@@ -20,16 +17,13 @@ CLI to rename files with date and time information from Exif data
 
 <!-- usage -->
 
+Not published. See the [root README](../../README.md) for the symlink that puts
+`exif-datify` on your PATH.
+
 ```sh-session
-$ npm install -g exif-datify
 $ exif-datify COMMAND
 running command...
-$ exif-datify (--version)
-exif-datify/0.0.10 darwin-arm64 node-v18.17.1
 $ exif-datify --help [COMMAND]
-USAGE
-  $ exif-datify COMMAND
-...
 ```
 
 <!-- usagestop -->
@@ -132,7 +126,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/dji-shift.ts](https://github.com/hwaterke/exif-datify/blob/v0.0.10/dist/commands/dji-shift.ts)_
+[dist/commands/dji-shift.ts](https://github.com/hwaterke/toolbox/blob/master/packages/exif-datify/src/commands/dji-shift.ts)_
 
 ## `exif-datify find-low-resolution PATH`
 
@@ -155,7 +149,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/find-low-resolution.ts](https://github.com/hwaterke/exif-datify/blob/master/src/commands/find-low-resolution.ts)_
+[src/commands/find-low-resolution.ts](https://github.com/hwaterke/toolbox/blob/master/packages/exif-datify/src/commands/find-low-resolution.ts)_
 
 ## `exif-datify gopro PATH`
 
@@ -178,7 +172,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/gopro.ts](https://github.com/hwaterke/exif-datify/blob/master/src/commands/gopro.ts)_
+[src/commands/gopro.ts](https://github.com/hwaterke/toolbox/blob/master/packages/exif-datify/src/commands/gopro.ts)_
 
 ## `exif-datify help [COMMANDS]`
 
@@ -224,7 +218,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/nikon.ts](https://github.com/hwaterke/exif-datify/blob/master/src/commands/nikon.ts)_
+[src/commands/nikon.ts](https://github.com/hwaterke/toolbox/blob/master/packages/exif-datify/src/commands/nikon.ts)_
 
 ## `exif-datify rename PATH`
 
@@ -257,6 +251,6 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/rename.ts](https://github.com/hwaterke/exif-datify/blob/v0.0.10/dist/commands/rename.ts)_
+[dist/commands/rename.ts](https://github.com/hwaterke/toolbox/blob/master/packages/exif-datify/src/commands/rename.ts)_
 
 <!-- commandsstop -->

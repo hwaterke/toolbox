@@ -1,9 +1,6 @@
 # fs-indexer
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/fs-indexer.svg)](https://npmjs.org/package/fs-indexer)
-[![Downloads/week](https://img.shields.io/npm/dw/fs-indexer.svg)](https://npmjs.org/package/fs-indexer)
-[![License](https://img.shields.io/npm/l/fs-indexer.svg)](https://github.com/hwaterke/fs-indexer/blob/master/package.json)
 
 <!-- toc -->
 
@@ -26,16 +23,13 @@ On a Mac, this can be achieved with `brew install b3sum xxhash exiftool`.
 
 <!-- usage -->
 
+Not published. See the [root README](../../README.md) for the symlink that puts
+`fs-indexer` on your PATH.
+
 ```sh-session
-$ npm install -g fs-indexer
 $ fs-indexer COMMAND
 running command...
-$ fs-indexer (--version)
-fs-indexer/0.0.7 darwin-arm64 node-v22.0.0
 $ fs-indexer --help [COMMAND]
-USAGE
-  $ fs-indexer COMMAND
-...
 ```
 
 <!-- usagestop -->
@@ -72,7 +66,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/crawl.ts](https://github.com/hwaterke/fs-indexer/blob/v0.0.7/src/commands/crawl.ts)_
+[src/commands/crawl.ts](https://github.com/hwaterke/toolbox/blob/master/packages/fs-indexer/src/commands/crawl.ts)_
 
 ## `fs-indexer help [COMMAND]`
 
@@ -113,7 +107,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/info.ts](https://github.com/hwaterke/fs-indexer/blob/v0.0.7/src/commands/info.ts)_
+[src/commands/info.ts](https://github.com/hwaterke/toolbox/blob/master/packages/fs-indexer/src/commands/info.ts)_
 
 ## `fs-indexer lookup PATH`
 
@@ -136,7 +130,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/lookup.ts](https://github.com/hwaterke/fs-indexer/blob/v0.0.7/src/commands/lookup.ts)_
+[src/commands/lookup.ts](https://github.com/hwaterke/toolbox/blob/master/packages/fs-indexer/src/commands/lookup.ts)_
 
 ## `fs-indexer verify PATH`
 
@@ -160,6 +154,6 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/verify.ts](https://github.com/hwaterke/fs-indexer/blob/v0.0.7/src/commands/verify.ts)_
+[src/commands/verify.ts](https://github.com/hwaterke/toolbox/blob/master/packages/fs-indexer/src/commands/verify.ts)_
 
 <!-- commandsstop -->
