@@ -148,6 +148,8 @@ importers:
         specifier: 'catalog:'
         version: 1.0.4
 
+  packages/tasks: {}
+
 packages:
 
   '@colors/colors@1.6.0':
