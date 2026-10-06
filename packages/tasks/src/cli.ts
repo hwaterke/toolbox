@@ -1,5 +1,6 @@
 import {parseArgs} from 'node:util'
 import {check} from './commands/check.ts'
+import {deps} from './commands/deps.ts'
 import {find} from './commands/find.ts'
 import {list} from './commands/list.ts'
 import {loadTasks} from './load.ts'
@@ -34,6 +35,11 @@ export async function main(argv: readonly string[]): Promise<number> {
       case 'find': {
         const {positionals} = parseArgs({args, allowPositionals: true})
         write(find(await loadTasks(await findRoot(process.cwd())), positionals))
+        return 0
+      }
+      case 'deps': {
+        const {positionals} = parseArgs({args, allowPositionals: true})
+        write(deps(await loadTasks(await findRoot(process.cwd())), positionals))
         return 0
       }
       default:
