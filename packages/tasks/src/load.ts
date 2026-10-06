@@ -4,12 +4,13 @@ import {
   isMap,
   isSeq,
   LineCounter,
+  Parser,
   parseDocument,
   type Document,
   type Node,
 } from 'yaml'
 import type {z} from 'zod'
-import {Frontmatter} from './schema.ts'
+import {Frontmatter, STATUSES, TASK_ID} from './schema.ts'
 
 export const TASKS_DIR = 'tasks'
 
@@ -17,9 +18,15 @@ export const TASKS_DIR = 'tasks'
 export type Problem = {line: number; message: string}
 
 /** A task file, valid or not. `file` is relative to the repo root. */
-export type TaskFile = {file: string; body: string} & (
-  {ok: true; frontmatter: Frontmatter} | {ok: false; problems: Problem[]}
-)
+export type TaskFile = {
+  file: string
+  /** From the filename; undefined when it is not `TASK-n.md`. */
+  id: string | undefined
+  /** Undefined when the frontmatter does not parse or fails the schema. */
+  frontmatter: Frontmatter | undefined
+  body: string
+  problems: Problem[]
+}
 
 /** Reads every `tasks/*.md` under `root`, ordered by number. */
 export async function loadTasks(root: string): Promise<TaskFile[]> {
@@ -41,59 +48,110 @@ export async function loadTasks(root: string): Promise<TaskFile[]> {
   )
 }
 
-/** Splits a task file into frontmatter and body, and validates the frontmatter. */
+/** Splits a task file into frontmatter and body, and checks the frontmatter. */
 export function parseTask(file: string, text: string): TaskFile {
+  const stem = nodePath.basename(file, '.md')
+  const id = TASK_ID.test(stem) ? stem : undefined
+  const task: TaskFile = {
+    file,
+    id,
+    frontmatter: undefined,
+    body: text,
+    problems: [],
+  }
+  if (!id) task.problems.push({line: 1, message: 'filename is not TASK-n.md'})
+
   const lines = text.split(/\r?\n/)
   const close = lines[0] === '---' ? lines.indexOf('---', 1) : -1
   if (close === -1) {
-    const message = 'no frontmatter between --- lines'
-    return {file, body: text, ok: false, problems: [{line: 1, message}]}
+    task.problems.push({line: 1, message: 'no frontmatter between --- lines'})
+    return task
   }
-  const body = lines.slice(close + 1).join('\n')
+  task.body = lines.slice(close + 1).join('\n')
 
+  const source = lines.slice(1, close).join('\n')
   const lineCounter = new LineCounter()
-  const doc = parseDocument(lines.slice(1, close).join('\n'), {
-    lineCounter,
-    prettyErrors: false,
-  })
+  const doc = parseDocument(source, {lineCounter, prettyErrors: false})
   // The frontmatter starts on the file's second line.
   const lineAt = (offset: number) => lineCounter.linePos(offset).line + 1
 
   if (doc.errors.length > 0) {
-    const problems = doc.errors.map((error) => ({
-      line: lineAt(error.pos[0]),
-      message: error.message,
-    }))
-    return {file, body, ok: false, problems}
+    for (const error of doc.errors) {
+      task.problems.push({line: lineAt(error.pos[0]), message: error.message})
+    }
+    return task
   }
 
-  const result = Frontmatter.safeParse(doc.toJS())
-  if (result.success) return {file, body, ok: true, frontmatter: result.data}
+  for (const offset of commentOffsets(source)) {
+    // An unquoted " #" starts a comment, so `title: Fix #3` reads as "Fix".
+    const message = 'comment in frontmatter; quote a value containing " #"'
+    task.problems.push({line: lineAt(offset), message})
+  }
 
-  const problems = result.error.issues
-    .flatMap((issue) =>
-      splitIssue(issue).map(({path, message}) => {
+  const result = Frontmatter.safeParse(doc.toJS(), {reportInput: true})
+  if (result.success) {
+    task.frontmatter = result.data
+  } else {
+    for (const issue of result.error.issues) {
+      for (const {path, message} of describe(issue)) {
         const offset = nodeAt(doc, path)?.range?.[0]
-        return {line: offset === undefined ? 1 : lineAt(offset), message}
-      })
-    )
-    .sort((a, b) => a.line - b.line)
-  return {file, body, ok: false, problems}
+        task.problems.push({
+          line: offset === undefined ? 1 : lineAt(offset),
+          message,
+        })
+      }
+    }
+  }
+  task.problems.sort((a, b) => a.line - b.line)
+  return task
+}
+
+/** Where every comment in `source` starts, read off the concrete syntax tree. */
+function commentOffsets(source: string): number[] {
+  const offsets: number[] = []
+  const walk = (value: unknown) => {
+    if (Array.isArray(value)) {
+      value.forEach(walk)
+    } else if (typeof value === 'object' && value !== null) {
+      const token = value as {type?: unknown; offset?: unknown}
+      if (token.type === 'comment' && typeof token.offset === 'number') {
+        offsets.push(token.offset)
+      }
+      Object.values(value).forEach(walk)
+    }
+  }
+  for (const token of new Parser().parse(source)) walk(token)
+  return offsets
 }
 
 type Located = {path: PropertyKey[]; message: string}
 
-/** One entry per unknown key, so each points at its own line. */
-function splitIssue(issue: z.core.$ZodIssue): Located[] {
+/** One message per problem; an issue naming several unknown keys gives one each. */
+function describe(issue: z.core.$ZodIssue): Located[] {
+  const {path} = issue
+  const name = path.join('.')
+  const input = JSON.stringify(issue.input)
   if (issue.code === 'unrecognized_keys') {
     return issue.keys.map((key) => ({
-      path: [...issue.path, key],
+      path: [...path, key],
       message: `unknown key "${key}"`,
     }))
   }
-  return [
-    {path: issue.path, message: `${issue.path.join('.')}: ${issue.message}`},
-  ]
+  if (path.length === 0) return [{path, message: 'frontmatter is not a map'}]
+  if (issue.input === undefined) return [{path, message: `missing ${name}`}]
+  if (issue.input === null) return [{path, message: `${name} is empty`}]
+  if (name === 'status' && issue.code === 'invalid_value') {
+    return [{path, message: `status ${input} is not ${STATUSES.join('|')}`}]
+  }
+  if (issue.code === 'invalid_type') {
+    const article = /^[aeiou]/.test(issue.expected) ? 'an' : 'a'
+    return [{path, message: `${name} is not ${article} ${issue.expected}`}]
+  }
+  if (issue.code === 'too_small') return [{path, message: `${name} is empty`}]
+  if (issue.code === 'invalid_format') {
+    return [{path, message: `${name} ${input} is not a TASK-n id`}]
+  }
+  return [{path, message: `${name}: ${issue.message}`}]
 }
 
 /** The node at `path`; for a map entry, its key, which is where the line starts. */
