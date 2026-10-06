@@ -128,6 +128,96 @@ describe('frontmatter', () => {
   })
 })
 
+/** A task file with this status and these dependencies, as a block list. */
+const task = (status: string, ...depends: string[]) =>
+  `---\ntitle: A task\nstatus: ${status}\n` +
+  (depends.length > 0
+    ? `depends:\n${depends.map((d) => `  - ${d}\n`).join('')}`
+    : '') +
+  '---\n'
+
+describe('graph', () => {
+  test('allows closed tasks under a done one, and dropped under dropped', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md': task('done'),
+        'tasks/TASK-2.md': task('dropped', 'TASK-3'),
+        'tasks/TASK-3.md': task('dropped'),
+        'tasks/TASK-4.md': task('done', 'TASK-1', 'TASK-2'),
+        'tasks/TASK-5.md': task('todo', 'TASK-1', 'TASK-4'),
+      })
+    ).toEqual([])
+  })
+
+  test('dependencies exist', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md': task('todo', 'TASK-2', 'TASK-9'),
+        'tasks/TASK-2.md': task('todo'),
+      })
+    ).toEqual(['tasks/TASK-1.md:6 depends on TASK-9, which does not exist'])
+  })
+
+  test('no task depends on itself', async () => {
+    expect(
+      await checkTasks({'tasks/TASK-1.md': task('todo', 'TASK-1')})
+    ).toEqual(['tasks/TASK-1.md:5 depends on itself'])
+  })
+
+  test('no cycle, each reported once where it closes', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md': task('todo', 'TASK-2'),
+        'tasks/TASK-2.md': task('todo', 'TASK-3'),
+        'tasks/TASK-3.md': task('todo', 'TASK-1'),
+        'tasks/TASK-4.md': task('todo', 'TASK-1', 'TASK-5'),
+        'tasks/TASK-5.md': task('todo', 'TASK-4'),
+      })
+    ).toEqual([
+      'tasks/TASK-3.md:5 dependency cycle TASK-1 -> TASK-2 -> TASK-3 -> TASK-1',
+      'tasks/TASK-5.md:5 dependency cycle TASK-4 -> TASK-5 -> TASK-4',
+    ])
+  })
+
+  test('a done task has no open dependency', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md': task('done', 'TASK-2', 'TASK-3', 'TASK-4'),
+        'tasks/TASK-2.md': task('idea'),
+        'tasks/TASK-3.md': task('doing'),
+        'tasks/TASK-4.md': task('done'),
+      })
+    ).toEqual([
+      'tasks/TASK-1.md:5 done, but depends on TASK-2, which is idea',
+      'tasks/TASK-1.md:6 done, but depends on TASK-3, which is doing',
+    ])
+  })
+
+  test('an open task does not depend on a dropped one', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md': task('idea', 'TASK-3'),
+        'tasks/TASK-2.md': task('doing', 'TASK-3'),
+        'tasks/TASK-3.md': task('dropped'),
+      })
+    ).toEqual([
+      'tasks/TASK-1.md:5 depends on TASK-3, which is dropped',
+      'tasks/TASK-2.md:5 depends on TASK-3, which is dropped',
+    ])
+  })
+
+  test('a dependency on an invalid task file only reports that file', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md': task('todo', 'TASK-2'),
+        'tasks/TASK-2.md': task('later'),
+      })
+    ).toEqual([
+      'tasks/TASK-2.md:3 status "later" is not idea|todo|doing|done|dropped',
+    ])
+  })
+})
+
 describe('tasks check', () => {
   const BIN = new URL('../bin/run.ts', import.meta.url).pathname
 

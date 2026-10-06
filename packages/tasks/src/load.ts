@@ -17,6 +17,9 @@ export const TASKS_DIR = 'tasks'
 /** One problem in a task file, at a 1-indexed line of that file. */
 export type Problem = {line: number; message: string}
 
+/** A problem together with the file it is in. */
+export type Finding = Problem & {file: string}
+
 /** A task file, valid or not. `file` is relative to the repo root. */
 export type TaskFile = {
   file: string
@@ -24,6 +27,8 @@ export type TaskFile = {
   id: string | undefined
   /** Undefined when the frontmatter does not parse or fails the schema. */
   frontmatter: Frontmatter | undefined
+  /** The line of each `depends` entry, in order. */
+  dependsLines: number[]
   body: string
   problems: Problem[]
 }
@@ -56,6 +61,7 @@ export function parseTask(file: string, text: string): TaskFile {
     file,
     id,
     frontmatter: undefined,
+    dependsLines: [],
     body: text,
     problems: [],
   }
@@ -91,6 +97,9 @@ export function parseTask(file: string, text: string): TaskFile {
   const result = Frontmatter.safeParse(doc.toJS(), {reportInput: true})
   if (result.success) {
     task.frontmatter = result.data
+    task.dependsLines = (result.data.depends ?? []).map((_, index) =>
+      lineAt(nodeAt(doc, ['depends', index])?.range?.[0] ?? 0)
+    )
   } else {
     for (const issue of result.error.issues) {
       for (const {path, message} of describe(issue)) {

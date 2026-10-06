@@ -3,6 +3,10 @@ import {z} from 'zod'
 export const STATUSES = ['idea', 'todo', 'doing', 'done', 'dropped'] as const
 export type Status = (typeof STATUSES)[number]
 
+/** Neither done nor dropped: work that may still happen. */
+export const isOpen = (status: Status) =>
+  status === 'idea' || status === 'todo' || status === 'doing'
+
 export const TASK_ID = /^TASK-[1-9]\d*$/
 
 /** The whole frontmatter. Strict: an unknown key is an error, not ignored. */
