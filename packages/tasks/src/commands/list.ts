@@ -1,5 +1,5 @@
 import {isTask, type Task, type TaskFile} from '../load.ts'
-import {STATUSES, type Status} from '../schema.ts'
+import {parseStatus, STATUSES, type Status} from '../schema.ts'
 
 export type ListOptions = {all?: boolean; status?: string[]; ready?: boolean}
 
@@ -37,11 +37,3 @@ export function list(files: TaskFile[], options: ListOptions = {}): string[] {
 /** `TASK-54 todo <full title>`: the title is never cut, it is the search words. */
 export const taskLine = ({id, frontmatter}: Task) =>
   `${id} ${frontmatter.status} ${frontmatter.title}`
-
-function parseStatus(status: string): Status {
-  const known = STATUSES.find((candidate) => candidate === status)
-  if (!known) {
-    throw new Error(`unknown status "${status}"; use ${STATUSES.join('|')}`)
-  }
-  return known
-}

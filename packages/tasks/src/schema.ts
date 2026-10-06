@@ -7,6 +7,15 @@ export type Status = (typeof STATUSES)[number]
 export const isOpen = (status: Status) =>
   status === 'idea' || status === 'todo' || status === 'doing'
 
+/** `status` as a `Status`; throws naming the valid ones. */
+export function parseStatus(status: string): Status {
+  const known = STATUSES.find((candidate) => candidate === status)
+  if (!known) {
+    throw new Error(`unknown status "${status}"; use ${STATUSES.join('|')}`)
+  }
+  return known
+}
+
 export const TASK_ID = /^TASK-[1-9]\d*$/
 
 /** The whole frontmatter. Strict: an unknown key is an error, not ignored. */
