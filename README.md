@@ -5,13 +5,14 @@ share.
 
 ## Packages
 
-Three CLIs, under `packages/`:
+Four CLIs, under `packages/`:
 
 | Package                                   | What it does                                                                                                                                                                                                       |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [`exif-datify`](packages/exif-datify)     | Renames media files from their Exif metadata, and repairs dates that cameras got wrong. Commands: `rename`, `set-date`, `dji-shift`, `gopro`, `nikon`, `rotate`, `strip`, `group-by-model`, `find-low-resolution`. |
 | [`fs-indexer`](packages/fs-indexer)       | Indexes a filesystem into a SQLite database — sizes, hashes, Exif — so duplicates can be found without re-reading the files. Commands: `crawl`, `hash`, `exif`, `sync`, `verify`, `info`, `lookup`.                |
 | [`photo-archive`](packages/photo-archive) | Files already-renamed media into the photo archive, and checks the archive against its layout rules. Commands: `ingest`, `lint`, `undo`.                                                                           |
+| [`tasks`](packages/tasks)                 | Lists, finds, creates and checks a repo's `tasks/` folder: one Markdown file per task, written for coding agents. Commands: `new`, `list`, `find`, `deps`, `check`.                                                |
 
 Two libraries they depend on:
 
@@ -66,10 +67,11 @@ symlink is the whole distribution mechanism — nothing is published.
 ln -s "$PWD/packages/exif-datify/bin/run.ts"   ~/.local/bin/exif-datify
 ln -s "$PWD/packages/fs-indexer/bin/run.ts"    ~/.local/bin/fs-indexer
 ln -s "$PWD/packages/photo-archive/bin/run.ts" ~/.local/bin/photo-archive
+ln -s "$PWD/packages/tasks/bin/run.ts"         ~/.local/bin/tasks
 ```
 
-oclif resolves its commands through the symlink, so the CLIs work from any
-directory.
+oclif resolves its commands through the symlink, and `tasks` parses its own
+arguments, so every CLI works from any directory.
 
 ## Development
 
