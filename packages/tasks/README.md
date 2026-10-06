@@ -94,7 +94,8 @@ too.
   task has a body that says why.
 - **References:** every task id in the tasks and in the given files names a task
   that exists. Any case counts, so `task-41` in a path or a branch name is not a
-  mistake; only a missing task is an error. A `DRAFT-n` id is an error.
+  mistake; only a missing task is an error. A `DRAFT-n` id is an error, but only
+  in capitals: a lowercase "draft-2" is prose.
 - **Setup:** a repo with a `.prettierrc*` file lists `tasks/` in
   `.prettierignore`.
 

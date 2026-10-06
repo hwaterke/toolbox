@@ -341,14 +341,14 @@ describe('references', () => {
     ])
   })
 
-  test('a DRAFT-n id, in any case, is an error', async () => {
+  test('a DRAFT-n id is an error, a lowercase draft-n is prose', async () => {
     await repo.write({
       'tasks/TASK-1.md': one + '\nFrom DRAFT-3.\n',
-      'README.md': 'draft-23\n',
+      'README.md': 'DRAFT-23\nLegal sent back draft-2, then Draft-3.\n',
     })
     expect(await check(repo.dir, ['README.md'])).toEqual([
       'tasks/TASK-1.md:6 DRAFT-3 is a draft id; drafts are now tasks with status idea',
-      'README.md:1 draft-23 is a draft id; drafts are now tasks with status idea',
+      'README.md:1 DRAFT-23 is a draft id; drafts are now tasks with status idea',
     ])
   })
 })

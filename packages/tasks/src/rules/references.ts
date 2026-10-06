@@ -3,11 +3,12 @@ import type {Finding, TaskFile} from '../load.ts'
 /** A file to scan for task ids, minus the lines another rule owns. */
 export type Source = {file: string; text: string; skip?: ReadonlySet<number>}
 
-const MENTION = /\b(task|draft)-(\d+)\b/gi
+const MENTION = /\b([Tt][Aa][Ss][Kk]|DRAFT)-(\d+)\b/g
 
 /**
  * Every task id mentioned in `sources` names a task. Any case counts: a
- * `task-41` in a path or a branch name is no mistake.
+ * `task-41` in a path or a branch name is no mistake. A draft id counts only
+ * in capitals: a lowercase "draft-2" is prose, such as a document's version.
  */
 export function referenceProblems(
   sources: Source[],
@@ -23,7 +24,7 @@ export function referenceProblems(
         if (seen.has(mention)) continue
         seen.add(mention)
         const message =
-          prefix?.toLowerCase() === 'draft'
+          prefix === 'DRAFT'
             ? `${mention} is a draft id; drafts are now tasks with status idea`
             : ids.has(`TASK-${number}`)
               ? undefined
