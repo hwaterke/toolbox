@@ -87,6 +87,15 @@ describe('frontmatter', () => {
     ])
   })
 
+  test('has a one-line title', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md': '---\nstatus: todo\ntitle: |-\n  One\n  two\n---\n',
+        'tasks/TASK-2.md': '---\ntitle: |\n  One\nstatus: todo\n---\n',
+      })
+    ).toEqual(['tasks/TASK-1.md:3 title is more than one line'])
+  })
+
   test('lists dependencies as TASK-n ids and labels as strings', async () => {
     expect(
       await checkTasks({

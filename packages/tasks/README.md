@@ -84,9 +84,9 @@ too.
 
 ### What `check` checks
 
-- **Frontmatter:** it parses, has no unknown key, a known status and a non-empty
-  title, and the filename is `TASK-n.md`. A YAML comment is an error: an
-  unquoted ` #` silently cuts a title short.
+- **Frontmatter:** it parses, has no unknown key, a known status and a
+  non-empty, one-line title, and the filename is `TASK-n.md`. A YAML comment is
+  an error: an unquoted ` #` silently cuts a title short.
 - **Graph:** every dependency exists, no task depends on itself, there is no
   cycle, a `done` task has no open dependency, and an open task does not depend
   on a `dropped` one.

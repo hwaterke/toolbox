@@ -20,7 +20,12 @@ export const TASK_ID = /^TASK-[1-9]\d*$/
 
 /** The whole frontmatter. Strict: an unknown key is an error, not ignored. */
 export const Frontmatter = z.strictObject({
-  title: z.string().trim().min(1),
+  // One line: every command prints a title on its task's one line.
+  title: z
+    .string()
+    .trim()
+    .min(1)
+    .refine((title) => !/[\r\n]/.test(title), 'title is more than one line'),
   status: z.enum(STATUSES),
   depends: z.array(z.string().regex(TASK_ID)).optional(),
   labels: z.array(z.string().min(1)).optional(),

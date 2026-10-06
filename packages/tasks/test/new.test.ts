@@ -43,6 +43,9 @@ test('takes a status, and rejects an unknown one or an empty title', async () =>
   await expect(newTask(repo.dir, {title: '  '})).rejects.toThrow(
     'the title is empty'
   )
+  await expect(newTask(repo.dir, {title: 'One\ntwo'})).rejects.toThrow(
+    'the title is more than one line'
+  )
 })
 
 test('titles read back unchanged, quoted only when YAML needs it', async () => {

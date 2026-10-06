@@ -171,6 +171,7 @@ function describe(issue: z.core.$ZodIssue): Located[] {
     return [{path, message: `${name} is not ${article} ${issue.expected}`}]
   }
   if (issue.code === 'too_small') return [{path, message: `${name} is empty`}]
+  if (issue.code === 'custom') return [{path, message: issue.message}]
   if (issue.code === 'invalid_format') {
     return [{path, message: `${name} ${input} is not a TASK-n id`}]
   }

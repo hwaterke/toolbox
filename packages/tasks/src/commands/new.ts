@@ -17,6 +17,7 @@ export async function newTask(
   {title, status = 'idea', body = ''}: NewOptions
 ): Promise<string> {
   if (title.trim() === '') throw new Error('the title is empty')
+  if (/[\r\n]/.test(title)) throw new Error('the title is more than one line')
   const frontmatter = stringify(
     {title, status: parseStatus(status)},
     // 0: never fold a long title across lines.
