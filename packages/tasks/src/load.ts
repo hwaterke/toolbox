@@ -38,6 +38,12 @@ export type TaskFile = {
   problems: Problem[]
 }
 
+/** A task file with an id and valid frontmatter: one the commands can show. */
+export type Task = TaskFile & {id: string; frontmatter: Frontmatter}
+
+export const isTask = (task: TaskFile): task is Task =>
+  task.id !== undefined && task.frontmatter !== undefined
+
 /** Reads every `tasks/*.md` under `root`, ordered by number. */
 export async function loadTasks(root: string): Promise<TaskFile[]> {
   let names: string[]
