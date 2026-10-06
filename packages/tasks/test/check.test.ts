@@ -260,6 +260,90 @@ describe('body', () => {
   })
 })
 
+describe('references', () => {
+  const one = '---\ntitle: One\nstatus: todo\n---\n'
+
+  test('every TASK-n in a task exists', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md':
+          "---\ntitle: 'After TASK-8'\nstatus: todo\n---\n\nSee TASK-1 and TASK-9, TASK-9.\n",
+      })
+    ).toEqual([
+      'tasks/TASK-1.md:2 TASK-8 does not exist',
+      'tasks/TASK-1.md:6 TASK-9 does not exist',
+    ])
+  })
+
+  test('a missing dependency is reported once, by the graph rule', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md':
+          '---\ntitle: One\nstatus: todo\ndepends:\n  - TASK-8\nlabels: [TASK-7]\n---\n',
+        'tasks/TASK-2.md':
+          '---\ntitle: Two\nstatus: todo\ndepends: [TASK-9]\n---\n',
+      })
+    ).toEqual([
+      'tasks/TASK-1.md:5 depends on TASK-8, which does not exist',
+      'tasks/TASK-1.md:6 TASK-7 does not exist',
+      'tasks/TASK-2.md:4 depends on TASK-9, which does not exist',
+    ])
+  })
+
+  test('every TASK-n in the given files and directories exists', async () => {
+    await repo.write({
+      'tasks/TASK-1.md': one,
+      'README.md': 'Done in TASK-1.\nTracked in tasks/TASK-2.md.\n',
+      'docs/a.md': 'TASK-007\n',
+      'docs/deep/b.md': '\nTASK-3\n',
+      'docs/c.txt': 'TASK-4\n',
+      'notes.txt': 'TASK-5\n',
+    })
+    expect(
+      await check(repo.dir, [
+        'README.md',
+        'docs',
+        'notes.txt',
+        'tasks/TASK-1.md',
+      ])
+    ).toEqual([
+      'README.md:2 TASK-2 does not exist',
+      'docs/a.md:1 TASK-007 does not exist',
+      'docs/deep/b.md:2 TASK-3 does not exist',
+      'notes.txt:1 TASK-5 does not exist',
+    ])
+  })
+
+  test('paths are relative to the working directory', async () => {
+    await repo.write({'tasks/TASK-1.md': one, 'docs/a.md': 'TASK-2\n'})
+    expect(await check(repo.dir, ['a.md'], `${repo.dir}/docs`)).toEqual([
+      'docs/a.md:1 TASK-2 does not exist',
+    ])
+  })
+
+  test('a wrongly cased id is an error', async () => {
+    await repo.write({
+      'tasks/TASK-1.md': one,
+      'README.md': 'task-1, Task-1 and subtask-1\n',
+    })
+    expect(await check(repo.dir, ['README.md'])).toEqual([
+      'README.md:1 task-1 is cased wrong; write TASK-1',
+      'README.md:1 Task-1 is cased wrong; write TASK-1',
+    ])
+  })
+
+  test('a DRAFT-n id, in any case, is an error', async () => {
+    await repo.write({
+      'tasks/TASK-1.md': one + '\nFrom DRAFT-3.\n',
+      'README.md': 'draft-23\n',
+    })
+    expect(await check(repo.dir, ['README.md'])).toEqual([
+      'tasks/TASK-1.md:6 DRAFT-3 is a draft id; drafts are now tasks with status idea',
+      'README.md:1 draft-23 is a draft id; drafts are now tasks with status idea',
+    ])
+  })
+})
+
 describe('tasks check', () => {
   const BIN = new URL('../bin/run.ts', import.meta.url).pathname
 
@@ -269,6 +353,16 @@ describe('tasks check', () => {
     })
     const {stdout, stderr} = await run(BIN, ['check'], {cwd: repo.dir})
     expect([stdout, stderr]).toEqual(['', ''])
+  })
+
+  test('a path that does not exist is a one-line error', async () => {
+    await expect(
+      run(BIN, ['check', 'nope.md'], {cwd: repo.dir})
+    ).rejects.toMatchObject({
+      code: 1,
+      stdout: '',
+      stderr: 'no such file: nope.md\n',
+    })
   })
 
   test('prints one line per problem and exits 1', async () => {

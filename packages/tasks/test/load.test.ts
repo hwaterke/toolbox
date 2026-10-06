@@ -34,7 +34,7 @@ describe('loadTasks', () => {
         '---\ntitle: Two\nstatus: idea\ndepends: [TASK-10]\nlabels: [world]\n---\n',
       'tasks/notes.txt': 'not a task',
     })
-    expect(await loadTasks(repo.dir)).toEqual([
+    expect(await loadTasks(repo.dir)).toMatchObject([
       {
         file: 'tasks/TASK-2.md',
         id: 'TASK-2',

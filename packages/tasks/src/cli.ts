@@ -10,8 +10,9 @@ export async function main(argv: readonly string[]): Promise<number> {
   try {
     switch (command) {
       case 'check': {
-        parseArgs({args, options: {}})
-        const lines = await check(await findRoot(process.cwd()))
+        const {positionals} = parseArgs({args, allowPositionals: true})
+        const root = await findRoot(process.cwd())
+        const lines = await check(root, positionals, process.cwd())
         for (const line of lines) process.stdout.write(`${line}\n`)
         return lines.length > 0 ? 1 : 0
       }

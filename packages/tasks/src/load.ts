@@ -29,6 +29,8 @@ export type TaskFile = {
   frontmatter: Frontmatter | undefined
   /** The line of each `depends` entry, in order. */
   dependsLines: number[]
+  /** The whole file. */
+  text: string
   /** Everything after the closing `---`; the whole file when there is none. */
   body: string
   /** The file line the body starts on. */
@@ -65,6 +67,7 @@ export function parseTask(file: string, text: string): TaskFile {
     id,
     frontmatter: undefined,
     dependsLines: [],
+    text,
     body: text,
     bodyLine: 1,
     problems: [],
