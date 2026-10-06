@@ -128,13 +128,17 @@ describe('frontmatter', () => {
   })
 })
 
-/** A task file with this status and these dependencies, as a block list. */
+/**
+ * A task file with this status and these dependencies, as a block list. A
+ * dropped one gets a reason, which the body rules ask for.
+ */
 const task = (status: string, ...depends: string[]) =>
   `---\ntitle: A task\nstatus: ${status}\n` +
   (depends.length > 0
     ? `depends:\n${depends.map((d) => `  - ${d}\n`).join('')}`
     : '') +
-  '---\n'
+  '---\n' +
+  (status === 'dropped' ? '\nNo longer wanted.\n' : '')
 
 describe('graph', () => {
   test('allows closed tasks under a done one, and dropped under dropped', async () => {
@@ -214,6 +218,44 @@ describe('graph', () => {
       })
     ).toEqual([
       'tasks/TASK-2.md:3 status "later" is not idea|todo|doing|done|dropped',
+    ])
+  })
+})
+
+describe('body', () => {
+  const done = '---\ntitle: One\nstatus: done\n---\n'
+
+  test('a done task has every acceptance criterion ticked', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md':
+          done +
+          '\n## Description\n\n- [ ] not a criterion\n\n' +
+          '## Acceptance criteria\n\n- [x] Ticked\n- [ ] Not ticked\n  - [ ] Nested\n\n' +
+          '### Still criteria\n\n* [ ] Starred\n\n' +
+          '## Plan\n\n- [ ] 1.1 A step is not a criterion\n',
+        'tasks/TASK-2.md':
+          '---\ntitle: Two\nstatus: todo\n---\n\n## Acceptance criteria\n\n- [ ] Open\n',
+      })
+    ).toEqual([
+      'tasks/TASK-1.md:13 done, but this criterion is not ticked',
+      'tasks/TASK-1.md:14 done, but this criterion is not ticked',
+      'tasks/TASK-1.md:18 done, but this criterion is not ticked',
+    ])
+  })
+
+  test('a dropped task has a body saying why', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md': '---\ntitle: One\nstatus: dropped\n---\n',
+        'tasks/TASK-2.md':
+          '---\ntitle: Two\nstatus: dropped\n---\n\n## Description\n\n',
+        'tasks/TASK-3.md':
+          '---\ntitle: Three\nstatus: dropped\n---\n\nDropped: TASK-1 covers it.\n',
+      })
+    ).toEqual([
+      'tasks/TASK-1.md:5 dropped, but no line in the body says why',
+      'tasks/TASK-2.md:5 dropped, but no line in the body says why',
     ])
   })
 })

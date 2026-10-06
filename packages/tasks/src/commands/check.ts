@@ -1,4 +1,5 @@
 import {loadTasks, type Finding} from '../load.ts'
+import {bodyProblems} from '../rules/body.ts'
 import {graphProblems} from '../rules/graph.ts'
 
 /** Every problem under `root`, one `file:line message` line each, in file order. */
@@ -10,6 +11,7 @@ export async function check(root: string): Promise<string[]> {
       problems.map((problem) => ({file, ...problem}))
     ),
     ...graphProblems(tasks),
+    ...bodyProblems(tasks),
   ]
   findings.sort(
     (a, b) =>

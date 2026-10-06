@@ -29,7 +29,10 @@ export type TaskFile = {
   frontmatter: Frontmatter | undefined
   /** The line of each `depends` entry, in order. */
   dependsLines: number[]
+  /** Everything after the closing `---`; the whole file when there is none. */
   body: string
+  /** The file line the body starts on. */
+  bodyLine: number
   problems: Problem[]
 }
 
@@ -63,6 +66,7 @@ export function parseTask(file: string, text: string): TaskFile {
     frontmatter: undefined,
     dependsLines: [],
     body: text,
+    bodyLine: 1,
     problems: [],
   }
   if (!id) task.problems.push({line: 1, message: 'filename is not TASK-n.md'})
@@ -74,6 +78,7 @@ export function parseTask(file: string, text: string): TaskFile {
     return task
   }
   task.body = lines.slice(close + 1).join('\n')
+  task.bodyLine = close + 2
 
   const source = lines.slice(1, close).join('\n')
   const lineCounter = new LineCounter()

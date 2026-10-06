@@ -46,6 +46,7 @@ describe('loadTasks', () => {
         },
         dependsLines: [4],
         body: '',
+        bodyLine: 7,
         problems: [],
       },
       {
@@ -54,6 +55,7 @@ describe('loadTasks', () => {
         frontmatter: {title: 'Ten', status: 'todo'},
         dependsLines: [],
         body: '\n## Description\n',
+        bodyLine: 5,
         problems: [],
       },
     ])
