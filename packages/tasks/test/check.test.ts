@@ -96,6 +96,14 @@ describe('frontmatter', () => {
     ).toEqual(['tasks/TASK-1.md:3 title is more than one line'])
   })
 
+  test('reads a file that starts with a byte order mark', async () => {
+    expect(
+      await checkTasks({
+        'tasks/TASK-1.md': '\uFEFF---\ntitle: One\nstatus: todo\n---\n',
+      })
+    ).toEqual([])
+  })
+
   test('lists dependencies as TASK-n ids and labels as strings', async () => {
     expect(
       await checkTasks({

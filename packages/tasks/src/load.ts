@@ -80,7 +80,8 @@ export function parseTask(file: string, text: string): TaskFile {
   }
   if (!id) task.problems.push({line: 1, message: 'filename is not TASK-n.md'})
 
-  const lines = text.split(/\r?\n/)
+  // Some Windows editors start a UTF-8 file with a byte order mark.
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/)
   const close = lines[0] === '---' ? lines.indexOf('---', 1) : -1
   if (close === -1) {
     task.problems.push({line: 1, message: 'no frontmatter between --- lines'})
