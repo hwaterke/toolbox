@@ -8,11 +8,12 @@ import {
   taskSource,
   type Source,
 } from '../rules/references.ts'
+import {PRETTIER_IGNORE, setupProblems} from '../rules/setup.ts'
 
 /**
- * Every problem in the tasks under `root`, and every bad task id in `paths`
- * (files, or directories whose Markdown files are read). One
- * `file:line message` line each, tasks first, in file order.
+ * Every problem in the tasks under `root`, every bad task id in `paths`
+ * (files, or directories whose Markdown files are read), and the repo setup.
+ * One `file:line message` line each: tasks, then `paths`, then setup.
  */
 export async function check(
   root: string,
@@ -30,10 +31,14 @@ export async function check(
     ...graphProblems(tasks),
     ...bodyProblems(tasks),
     ...referenceProblems([...tasks.map(taskSource), ...extra], ids),
+    ...(await setupProblems(root)),
   ]
 
   const order = new Map(
-    [...tasks, ...extra].map(({file}, index) => [file, index])
+    [...tasks, ...extra, {file: PRETTIER_IGNORE}].map(({file}, index) => [
+      file,
+      index,
+    ])
   )
   findings.sort(
     (a, b) =>

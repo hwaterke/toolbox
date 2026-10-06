@@ -344,6 +344,64 @@ describe('references', () => {
   })
 })
 
+describe('setup', () => {
+  const one = '---\ntitle: One\nstatus: todo\n---\n'
+  const finding =
+    '.prettierignore:1 does not list tasks/, so prettier re-wraps task files'
+
+  test('a repo with a prettier config lists tasks/ in .prettierignore', async () => {
+    await repo.write({'tasks/TASK-1.md': one, '.prettierrc.json': '{}\n'})
+    expect(await check(repo.dir)).toEqual([finding])
+    await repo.write({
+      '.prettierignore': 'node_modules\n# tasks/\ntasks/TASK-1.md\n',
+    })
+    expect(await check(repo.dir)).toEqual([finding])
+  })
+
+  test.each(['tasks', 'tasks/', '/tasks', '/tasks/', 'tasks/**', '  tasks/  '])(
+    '"%s" in .prettierignore is enough',
+    async (entry) => {
+      await repo.write({
+        'tasks/TASK-1.md': one,
+        '.prettierrc': 'proseWrap: always\n',
+        '.prettierignore': `node_modules\n${entry}\n`,
+      })
+      expect(await check(repo.dir)).toEqual([])
+    }
+  )
+
+  test('prettier.config.* counts as a prettier config', async () => {
+    await repo.write({
+      'tasks/TASK-1.md': one,
+      'prettier.config.js': 'export default {}\n',
+    })
+    expect(await check(repo.dir)).toEqual([finding])
+  })
+
+  test('a repo without a prettier config or without tasks/ needs nothing', async () => {
+    await repo.write({'tasks/TASK-1.md': one})
+    expect(await check(repo.dir)).toEqual([])
+    await repo.write({'other/.prettierrc.json': '{}\n'})
+    expect(await check(repo.dir)).toEqual([])
+
+    const bare = await makeTempRepo()
+    await bare.write({'.prettierrc.json': '{}\n'})
+    expect(await check(bare.dir)).toEqual([])
+    await bare.cleanup()
+  })
+
+  test('comes after the task problems', async () => {
+    await repo.write({
+      'tasks/TASK-1.md': '---\ntitle: One\nstatus: later\n---\n',
+      '.prettierrc.json': '{}\n',
+    })
+    expect(await check(repo.dir)).toEqual([
+      'tasks/TASK-1.md:3 status "later" is not idea|todo|doing|done|dropped',
+      finding,
+    ])
+  })
+})
+
 describe('tasks check', () => {
   const BIN = new URL('../bin/run.ts', import.meta.url).pathname
 
