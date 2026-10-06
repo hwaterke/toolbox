@@ -321,14 +321,14 @@ describe('references', () => {
     ])
   })
 
-  test('a wrongly cased id is an error', async () => {
+  test('an id in any case names its task', async () => {
     await repo.write({
       'tasks/TASK-1.md': one,
-      'README.md': 'task-1, Task-1 and subtask-1\n',
+      'README.md':
+        'task-1, Task-1, subtask-1 and branch feat/task-1-x\nOnly task-9 is missing.\n',
     })
     expect(await check(repo.dir, ['README.md'])).toEqual([
-      'README.md:1 task-1 is cased wrong; write TASK-1',
-      'README.md:1 Task-1 is cased wrong; write TASK-1',
+      'README.md:2 task-9 does not exist',
     ])
   })
 

@@ -5,7 +5,10 @@ export type Source = {file: string; text: string; skip?: ReadonlySet<number>}
 
 const MENTION = /\b(task|draft)-(\d+)\b/gi
 
-/** Every task id mentioned in `sources` names a task, in the right case. */
+/**
+ * Every task id mentioned in `sources` names a task. Any case counts: a
+ * `task-41` in a path or a branch name is no mistake.
+ */
 export function referenceProblems(
   sources: Source[],
   ids: ReadonlySet<string>
@@ -22,11 +25,9 @@ export function referenceProblems(
         const message =
           prefix?.toLowerCase() === 'draft'
             ? `${mention} is a draft id; drafts are now tasks with status idea`
-            : prefix !== 'TASK'
-              ? `${mention} is cased wrong; write TASK-${number}`
-              : ids.has(mention)
-                ? undefined
-                : `${mention} does not exist`
+            : ids.has(`TASK-${number}`)
+              ? undefined
+              : `${mention} does not exist`
         if (message) findings.push({file, line, message})
       }
     }
