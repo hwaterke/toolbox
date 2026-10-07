@@ -67,15 +67,19 @@ Each command prints one line per item, with no headers, colours, scores or blank
 lines. A command that succeeds with nothing to say prints nothing. An error is
 one line on stderr and exits with a non-zero code.
 
-| Command                                     | What it does                                                                                                                                                                   |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tasks new "title" [--status s] [-]`        | Creates the next free id, with status `idea` by default, and prints its path. `-` reads the body from stdin. Sections left empty are not written.                              |
-| `tasks list [--all] [--status s] [--ready]` | Lists `todo` and `doing` tasks by id, one `TASK-54 todo <title>` line each. `--status` can repeat. `--ready` lists the `todo` tasks whose dependencies are all `done`.         |
-| `tasks find word…`                          | Searches titles and bodies of every status for any of the words, case-insensitive. Open tasks come first, then the tasks that match the most words. Same line shape as `list`. |
-| `tasks deps TASK-46`                        | Prints one line per link: `needs TASK-60 done <title>` or `blocks TASK-70 idea <title>`.                                                                                       |
-| `tasks check [files…]`                      | Checks every task, and the task ids in the given files or folders. Prints one `tasks/TASK-54.md:3 <message>` line per problem, and exits 1 if there is any.                    |
+| Command                                              | What it does                                                                                                                                                                                                             |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tasks new "title" [--status s] [-]`                 | Creates the next free id, with status `idea` by default, and prints its path. `-` reads the body from stdin. Sections left empty are not written.                                                                        |
+| `tasks list [--all] [--open] [--status s] [--ready]` | Lists `todo` and `doing` tasks by id, one `TASK-54 todo <title>` line each. `--open` adds `idea`. `--status` can repeat. `--ready` lists the `todo` tasks whose dependencies are all `done`. The filters do not combine. |
+| `tasks find word…`                                   | Searches titles and bodies of every status for any of the words, case-insensitive. Open tasks come first, then the tasks that match the most words. Same line shape as `list`.                                           |
+| `tasks deps TASK-46`                                 | Prints one line per link: `needs TASK-60 done <title>` or `blocks TASK-70 idea <title>`.                                                                                                                                 |
+| `tasks check [files…]`                               | Checks every task, and the task ids in the given files or folders. Prints one `tasks/TASK-54.md:3 <message>` line per problem, and exits 1 if there is any.                                                              |
 
 Titles are never cut short, because they are the words an agent searches for.
+
+`tasks --help` lists the commands, and `tasks <command> --help` (or
+`tasks help <command>`) shows one command's options. Help goes to stdout and
+exits 0.
 
 `new` picks the next id that is free in the working tree, in every worktree and
 on every local branch, so two branches never create the same id. A task created

@@ -72,6 +72,17 @@ test('--status lists the given statuses', async () => {
   ])
 })
 
+test('--open lists idea, todo and doing', async () => {
+  expect(await listed({open: true})).toEqual([
+    'TASK-2 todo Next after done',
+    'TASK-3 doing In progress',
+    'TASK-4 todo Waits on doing',
+    'TASK-5 idea An idea',
+    'TASK-10 todo Fix #3: a long title that is never cut, because its words are what find and grep match on',
+    'TASK-11 todo Waits on a missing task',
+  ])
+})
+
 test('--ready lists todo tasks whose dependencies are all done', async () => {
   expect(await listed({ready: true})).toEqual([
     'TASK-2 todo Next after done',
@@ -87,7 +98,10 @@ test('an unknown status is an error', async () => {
 
 test('the filters do not combine', async () => {
   await expect(listed({all: true, ready: true})).rejects.toThrow(
-    'use one of --all, --status, --ready'
+    'use one of --all, --open, --status, --ready'
+  )
+  await expect(listed({open: true, status: ['idea']})).rejects.toThrow(
+    'use one of --all, --open, --status, --ready'
   )
 })
 
@@ -95,6 +109,8 @@ test('tasks list prints one line per task and exits 0; errors are one line', asy
   const BIN = new URL('../bin/run.ts', import.meta.url).pathname
   const {stdout} = await run(BIN, ['list', '--status', 'idea'], {cwd: repo.dir})
   expect(stdout).toBe('TASK-5 idea An idea\n')
+  const open = await run(BIN, ['list', '--open'], {cwd: repo.dir})
+  expect(open.stdout).toContain('TASK-5 idea An idea\n')
   await expect(
     run(BIN, ['list', '--status', 'later'], {cwd: repo.dir})
   ).rejects.toMatchObject({

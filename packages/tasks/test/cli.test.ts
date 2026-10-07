@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url'
 import {promisify} from 'node:util'
 import {expect, test} from 'vitest'
 import {USAGE} from '../src/cli.ts'
+import {COMMAND_HELP, OVERVIEW} from '../src/help.ts'
 import {makeTempRepo} from './utils/tempRepo.ts'
 
 const run = promisify(execFile)
@@ -21,6 +22,37 @@ test('no arguments prints the one-line usage and exits 1', async () => {
     stdout: '',
     stderr: `${USAGE}\n`,
   })
+})
+
+test('--help, -h and help print the overview to stdout and exit 0', async () => {
+  for (const args of [['--help'], ['-h'], ['help']]) {
+    const {stdout, stderr} = await run(BIN, args)
+    expect(stdout).toBe(`${OVERVIEW}\n`)
+    expect(stderr).toBe('')
+  }
+})
+
+test('every command has help, through --help, -h or help', async () => {
+  for (const command of ['new', 'list', 'find', 'deps', 'check']) {
+    const expected = `${COMMAND_HELP[command]}\n`
+    expect(expected).toMatch(new RegExp(`^usage: tasks ${command}\\b`))
+    expect((await run(BIN, [command, '--help'])).stdout).toBe(expected)
+    expect((await run(BIN, [command, 'x', '-h'])).stdout).toBe(expected)
+    expect((await run(BIN, ['help', command])).stdout).toBe(expected)
+  }
+})
+
+test('--help after -- is a word, not a flag', async () => {
+  const repo = await makeTempRepo()
+  try {
+    await repo.write({
+      'tasks/TASK-1.md': '---\ntitle: Document --help\nstatus: todo\n---\n',
+    })
+    const {stdout} = await run(BIN, ['find', '--', '--help'], {cwd: repo.dir})
+    expect(stdout).toBe('TASK-1 todo Document --help\n')
+  } finally {
+    await repo.cleanup()
+  }
 })
 
 test('a reader that closes early ends list quietly', async () => {
